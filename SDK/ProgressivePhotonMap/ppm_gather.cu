@@ -55,7 +55,9 @@ rtDeclareVariable(float,         rtpass_default_radius2, , );
 rtDeclareVariable(float,         scene_epsilon, , );
 rtDeclareVariable(float,         alpha, , );
 rtDeclareVariable(float,         total_emitted, , );
-rtDeclareVariable(float,         frame_number , , );
+rtDeclareVariable(float, frame_number, , );
+rtDeclareVariable(float, direct_ratio, , );
+rtDeclareVariable(float, indirect_ratio, , );
 rtDeclareVariable(float3,        ambient_light , , );
 rtDeclareVariable(uint,          use_debug_buffer, , );
 rtDeclareVariable(PPMLight,      light , , );
@@ -311,10 +313,11 @@ RT_PROGRAM void globalDensity()
 	
 	float3 direct_flux = direct_buffer[launch_index]/(frame_number + 1.0f);
 	rtpass_output_buffer[launch_index] = rec;
-	float3 final_color = 
+	float3 final_color = direct_flux * direct_ratio + indirect_flux * indirect_ratio;
+		
 		//direct_flux + indirect_flux + ambient_light*rec_atten_Kd; 
 		//(direct_flux + indirect_flux) * 2.f; 
-		direct_flux + indirect_flux * 8.f; 
+		//direct_flux + indirect_flux * 8.f; 
 		//indirect_flux * 15.f;// * 5.f;
 		//indirect_flux * 5.f;// * 5.f;
 		//direct_flux * 1.f;
@@ -332,7 +335,7 @@ RT_PROGRAM void globalDensity()
 		//direct_flux*100.f;
 		//direct_flux * 50.f + indirect_flux * 1.0f;
 	
-	//final_color = light.anchor;
+		//final_color = light.anchor;
 	output_buffer[launch_index] = make_float4(final_color);
 	if(use_debug_buffer == 1)
 		debug_buffer[launch_index] = make_float4( loop_iter, new_R2, new_N, M );
@@ -606,6 +609,7 @@ RT_PROGRAM void causticsDensity() {
 // 		final_color = make_float3(real_area/(M_PI * rec_radius2));
 // 	}
 	//final_color = light.anchor;
+
 	output_buffer[launch_index] = make_float4(final_color);
 	if(use_debug_buffer == 1)
 		debug_buffer[launch_index] = make_float4( loop_iter, new_R2, new_N, M );

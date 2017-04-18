@@ -54,7 +54,7 @@ if (WindowHeight == 600) WindowHeight -= 8;
 	
 	memset(temp, 0, sizeof(temp));
 	strcpy(temp+strlen(temp), mm);
-	sprintf(temp+strlen(temp), "(%08dK)", tt);
+	sprintf(temp+strlen(temp), "(%05d)", tt);
 	strcpy(temp+strlen(temp), lenbmp);
 
 	pWritingFile = fopen(temp, "wb");

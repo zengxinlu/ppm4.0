@@ -208,7 +208,7 @@ public:
 		, m_light_theta( 1.15f )
 		, m_split_choice(LongestDim)
 	{}
-	void selectScene(std::string model)
+	void selectScene(std::string model, std::string modelNum)
 	{
 		if (model == "box")				setTestScene(ProgressivePhotonScene::Box_Scene);
 		if (model == "torus")			setTestScene(ProgressivePhotonScene::Torus_Scene);
@@ -220,7 +220,7 @@ public:
 		if (model == "smallroom")		setTestScene(ProgressivePhotonScene::Small_Room_Scene);
 		if (model == "clock")			setTestScene(ProgressivePhotonScene::Clock_Scene);
 		if (model == "echess")			setTestScene(ProgressivePhotonScene::EChess_Scene);
-		m_model_file = std::string(sutil::samplesDir()) + "/progressivePhotonMap/scenes/" + model;
+		m_model_file = std::string(sutil::samplesDir()) + "/progressivePhotonMap/scenes/" + model + "/" + model + modelNum + ".yaml";
 	}	
 
 	/// From SampleScene
@@ -628,6 +628,9 @@ void ProgressivePhotonScene::loadScene(InitialCameraData& camera_data) {
 	float default_radius2 = modelConfig["default_radius"].as<double>();
 	m_context["rtpass_default_radius2"]->setFloat( default_radius2);
 	m_context["max_radius2"]->setFloat(default_radius2);
+	vector<float> blend_mothod = modelConfig["blend_mothod"].as<vector<float> >();
+	m_context["direct_ratio"]->setFloat(blend_mothod[0]);
+	m_context["indirect_ratio"]->setFloat(blend_mothod[1]);
 	optix::Aabb aabb;	
 	loadObjGeometry(modelConfig["filename"].as<std::string>(), aabb, true);
 
@@ -842,27 +845,6 @@ void ProgressivePhotonScene::initEnterPointCausticsGather() {
 	m_context->setExceptionProgram( EnterPointCausticsGather, exception_program );
 }
 void ProgressivePhotonScene::initGeometryInstances(InitialCameraData& camera_data) {
-		/// Populate scene hierarchy
-	//if (m_test_scene == Wedding_Ring_Scene)
-	//	initWeddingRing(camera_data);
-	//else if (m_test_scene == Conference_Scene)
-	//	initConference(camera_data);
-	//else if (m_test_scene == Sponza_Scene)
-	//	initSponza(camera_data);
-	//else if (m_test_scene == Clock_Scene)
-	//	initClock(camera_data);
-	//else if (m_test_scene == Cornel_Box_Scene)
-	//	initCornelBox(camera_data);
-	//else if (m_test_scene == Box_Scene)
-	//	initBox(camera_data);
-	//else if (m_test_scene == Small_Room_Scene)
-	//	initSmallRoom(camera_data);
-	//else if (m_test_scene == Sibenik_Scene)
-	//	initSibenik(camera_data);
-	//else if (m_test_scene == Torus_Scene)
-	//	initTorus(camera_data);
-	//else if (m_test_scene == EChess_Scene)
-	//	initEChess(camera_data);
 	loadScene(camera_data);
 
 	m_context["ambient_light"]->setFloat( 0.1f, 0.1f, 0.1f);
@@ -1738,7 +1720,7 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 	RTsize buffer_width, buffer_height;
 	output_buffer->getSize( buffer_width, buffer_height );
 
-	if ((m_frame_number % 10 == 0 || m_frame_number <= 20) && m_frame_number > 0)
+	if ((m_frame_number % 100 == 0 || m_frame_number <= 50) && m_frame_number > 0)
 		m_print_image = 1;
 
 	/// Print Images
@@ -1747,7 +1729,7 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 		char name1[256], name2[256];
 		sprintf(name1, "%s/%s/%s/grab", sutil::samplesDir(), "progressivePhotonMap", "screengrab");
 		sprintf(name2, "%s/%s/%s/%s", sutil::samplesDir(), "progressivePhotonMap", "screengrab", TestSceneNames[m_test_scene]);
-		grab(buffer_width, buffer_height, name1, name2, m_frame_number * (PHOTON_LAUNCH_WIDTH * PHOTON_LAUNCH_HEIGHT / 1024));
+		grab(buffer_width, buffer_height, name1, name2, m_frame_number);
 		m_print_image = false;
 	}
 
@@ -1781,9 +1763,7 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 	if (m_print_timings) std::cerr << "Starting gather pass   ... ";
 	t0 = sutil::currentTime();
 	
-	m_context->launch( EnterPointGlobalGather,
-		static_cast<unsigned int>(buffer_width),
-		static_cast<unsigned int>(buffer_height) );
+	m_context->launch(EnterPointGlobalGather, buffer_width, buffer_height);
 		
 	/*m_context->launch( EnterPointCausticsGather,
 		static_cast<unsigned int>(buffer_width),
@@ -1861,7 +1841,7 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 
 	tend = sutil::currentTime();
 
-	std::cerr << "Pass :" << m_frame_number << " cost :" << tend - tstart << std::endl;
+	//std::cerr << "Pass :" << m_frame_number << " cost :" << tend - tstart << std::endl;
 }
 
 
@@ -2148,6 +2128,7 @@ int main( int argc, char** argv )
 	float timeout = -1.0f;
 
 	std::string model = "box";
+	std::string modelNum = "1";
 
 	for (int i = 1; i < argc; ++i) {
 		std::string arg(argv[i]);
@@ -2155,6 +2136,13 @@ int main( int argc, char** argv )
 			if (++i < argc) {
 				std::string arg(argv[i]);
 				model = arg;
+				if (++i < argc) {
+					modelNum = std::string(argv[i]);
+				}
+				else {
+					std::cerr << "Missing argument to " << arg << "\n";
+					printUsageAndExit(argv[0]);
+				}
 			}
 			else {
 				std::cerr << "Missing argument to " << arg << "\n";
@@ -2163,13 +2151,12 @@ int main( int argc, char** argv )
 		}
 	}
 
-	if (timeout < 0.0) timeout = 1000;
-
+	if (timeout < 0.0) timeout = 3600;
 	try {
 		ProgressivePhotonScene scene;
 		if (print_timings) scene.printTimings();
 		if (display_debug_buffer) scene.displayDebugBuffer();
-		scene.selectScene(model);
+		scene.selectScene(model, modelNum);
 
 		scene.setGatherMethod(ProgressivePhotonScene::Triangle_Inside_Method);
 		GLUTDisplay::setProgressiveDrawingTimeout(timeout);
