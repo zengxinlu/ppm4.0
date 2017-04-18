@@ -1,0 +1,17 @@
+camera_data:
+  eye: [-0.519556, 0.119797, -0.591875]
+  lookat: [0, 0, 0]
+  up: [0.0, 1.0, 0.0]
+  vfov: 60.0
+light_data:
+  is_area_light: 1
+  anchor: [0.0, 0.2405, 0.0]
+  direction: null
+  position: [0.0, 0.241, 0.0]
+  v1: 0.224
+  v2: 0.08
+  radius: 0.001745329252
+  power: [1.0, 1.0, 1.0]
+default_radius: 0.0016
+blend_mothod: [1.0, 8.0]
+filename: "scenes/conference/conference.obj"

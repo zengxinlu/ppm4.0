@@ -1,0 +1,31 @@
+camera_data:
+  - eye: 
+      - [-235.0, 220.0, 0.0]
+      - [-235.0, 0.0, 0.0]
+      - [-235.0, 22.0, -235.0]
+    lookat: [0.0, 0.0, 0.0]
+    up: [0.0, 1.0, 0.0]
+    vfov: 35.0
+m_light:
+  - is_area_light: 0
+    space:
+      - anchor: [0.0, 0.0, 0.0]
+        position: [600, 500, 700]
+        direction: null
+      - anchor: [0.0, 0.0, 0.0]
+        position: [600, 500, 700]
+        direction: null
+    radius: 0.0872664626 
+    power: [5000, 5000, 5000]
+default_radius": 
+  - 0.81
+  - 0.64
+  - 1.0
+  - 16.0
+  - 4.0
+blend_mothod:
+  - [1.0, 8.0]
+  - [1.0, 0.0]
+  - [0.0, 1.0]
+  - [1.0, 1.0]
+filename: "scenes/wedding-band/wedding-band.obj"

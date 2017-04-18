@@ -1,0 +1,29 @@
+camera_data:
+  - eye: [0.0583623, -0.0303101, 0.207887]
+    lookat: [0.0, 0.0, 0.0]
+    up: [0.0, 0.0, 1.0]
+    vfov: 35.0
+  - eye: [0.380478, 0.267474, 0.0291848]
+    lookat: [0.0, 0.0, 0.0]
+    up: [0.0, 0.0, 1.0]
+    vfov: 35.0
+m_light:
+  - is_area_light: 1
+    space:
+      - anchor: [0.0, 0.0, 0.24]
+        direction: null
+        position: [0.0, 0.0, 0.2401]
+    point_size: 0.11
+    v1: [1.0, 0.0, 0.0]
+    v2: [0.0, 1.0, 0.0]
+    radius: 0.001745329252
+    power: [1.0, 1.0, 1.0]
+default_radius": 
+  - 0.0001
+  - 0.0004
+blend_mothod:
+  - [1.0, 8.0]
+  - [1.0, 0.0]
+  - [0.0, 1.0]
+  - [1.0, 1.0]
+filename: "scenes/EChess/EChess.obj"

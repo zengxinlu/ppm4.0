@@ -1,0 +1,333 @@
+<?xml version="1.0" ?>
+<Models>
+  <UsePhoton v="0"/>
+  <UseCaustics v="1"/>
+  <Progressive v="0"/>
+  <TargetModel v="1"/>
+  <WindowSize w="800" h="600"/>
+  <Model ID="sponza" >
+    <FileName>./Scenes/sponza_bunny_ring_big/sponza_bunny_ring_big.obj</FileName>
+    <LargestDist v="0"/>
+    <Camera>
+      <!--<Eye x="-4.1f" y="7.5f" z="3.16f"/>
+      <Lookat x="-1.33f" y="7.5f" z="3.16f"/>-->
+      <!--<Eye x="-8.27f" y="9.36f" z="0.855f"/>-->
+      <Eye x="-10.51f" y="0.69f" z="-2.18f"/>
+      <Lookat x="-7.94f" y="9.15f" z="0.787f"/>
+      <Up x="0.f" y="1.f" z="0.f"/>
+      <Vfov v="45.f"/>
+      <Faspect v="20.f"/>
+    </Camera>
+    <Light>
+      <LightType v="0"/>
+      <Radius v="0.f"/>
+      <!--
+      <Position x="-8.f" y="5.32f" z="-1.02f"/>
+      <Anchor x="-8.f" y="4.15f" z="-1.02f"/>
+      -->
+      <Position x="-8.f" y="23.32f" z="-1.02f"/>
+      <Anchor x="-8.f" y="22.15f" z="-1.02f"/>
+      <V1 x="1.f" y="0.f" z="0.0f"/>
+      <V2 x="0.0f" y="0.0f" z="1.0f"/>
+      <Power x="1.f" y="1.f" z="1.f"/>
+    </Light>
+    <Photon>
+      <TreeNum v="1"/>
+      <GlobalLaunchCluster v="64"/>
+      <GlobalCellSize v="4"/>
+      <CausticsLaunchCluster v="128"/>
+    </Photon>
+    <Gather>
+      <DirectCoeff v="1.0f"/>
+      <!--
+      <GlobalRadius2 v="100.f"/>
+      <GlobalCoeff v="1000.f"/>
+      -->
+      <GlobalRadius2 v="1.f"/>
+      <GlobalCoeff v="1.5f"/>
+      <CausticsRadius2 v="0.001f"/>
+      <CausticsCoeff v="2.f"/>
+    </Gather>
+  </Model>
+  <Model ID="smallroom" >
+    <FileName>C:/Users/Myron/Desktop/MeshRoom/obj/130yuan.obj</FileName>
+    <LargestDist v="0"/>
+    <Camera>
+      <!--<Eye x="-4.1f" y="7.5f" z="3.16f"/>
+      <Lookat x="-1.33f" y="7.5f" z="3.16f"/>-->
+      <Eye x="302" y="-185" z="451f"/>
+      <Lookat x="258" y="-156" z="394"/>
+      <Up x="0.f" y="1.f" z="0.f"/>
+      <Vfov v="30.f"/>
+      <Faspect v="20.f"/>
+    </Camera>
+    <Light>
+      <LightType v="1"/>
+      <Radius v="0.f"/>
+      <!--
+      <Position x="-8.f" y="5.32f" z="-1.02f"/>
+      <Anchor x="-8.f" y="4.15f" z="-1.02f"/>
+      -->
+      <Position x="0.f" y="0.f" z="180.02f"/>
+      <Anchor x="0.f" y="0.f" z="170.02f"/>
+      <V1 x="0.f" y="10.f" z="0.0f"/>
+      <V2 x="10.f" y="0.0f" z="0.0f"/>
+      <Power x="1.f" y="1.f" z="1.f"/>
+    </Light>
+    <Photon>
+      <TreeNum v="1"/>
+      <GlobalLaunchCluster v="64"/>
+      <GlobalCellSize v="4"/>
+      <CausticsLaunchCluster v="128"/>
+    </Photon>
+    <Gather>
+      <DirectCoeff v="1.0f"/>
+      <!--
+      <GlobalRadius2 v="100.f"/>
+      <GlobalCoeff v="1000.f"/>
+      -->
+      <GlobalRadius2 v="1.f"/>
+      <GlobalCoeff v="1.5f"/>
+      <CausticsRadius2 v="0.001f"/>
+      <CausticsCoeff v="20.f"/>
+    </Gather>
+  </Model>
+  <Model ID="conference" >
+    <FileName>C:/Users/Administrator/Desktop/scene/Conference/conference.obj</FileName>
+    <LargestDist v="0"/>
+    <Camera>
+      <Eye x="-11.23f" y="286.f" z="-400.f"/>
+      <Lookat x="1100.f" y="286.f" z="300.f"/>
+      <Up x="0.f" y="1.f" z="0.f"/>
+      <Vfov v="30.f"/>
+      <Faspect v="30.f"/>
+    </Camera>
+    <Light>
+      <LightType v="1"/>
+      <Radius v="0.f"/>
+      <Position x="206.f" y="602.f" z="-404f"/>
+      <Anchor x="206.f" y="400.f" z="-404.f"/>
+      <V1 x="200.0f" y="0.0f" z="0.0f"/>
+      <V2 x="0.0f" y="0.0f" z="200.0f"/>
+      <Power x="1.f" y="1.f" z="1.f"/>
+    </Light>
+    <Photon>
+      <TreeNum v="100"/>
+      <GlobalLaunchCluster v="8"/>
+      <GlobalCellSize v="8"/>
+      <CausticsLaunchCluster v="64"/>
+      <ShadowCellSize v="4"/>
+    </Photon>
+    <Gather>
+      <GlobalRadius2 v="10.f"/>
+      <CausticsRadius2 v="0"/>
+      <DirectCoeff v="1.0f"/>
+      <GlobalCoeff v="800.f"/>
+      <CausticsCoeff v="0.1f"/>
+    </Gather>
+  </Model>
+  <Model ID="buddha" >
+    <FileName>C:/Users/Administrator/Desktop/scene/Buddha/buddha.obj</FileName>
+    <LargestDist v="0"/>
+    <Camera>
+      <Eye x="-11.23f" y="6.6f" z="-0.75f"/>
+      <Lookat x="-5.f" y="6.6f" z="-0.75f"/>
+      <Up x="0.f" y="1.f" z="0.f"/>
+      <Vfov v="30.f"/>
+      <Faspect v="30.f"/>
+    </Camera>
+    <Light>
+      <LightType v="1"/>
+      <Radius v="0.f"/>
+      <Position x="0.0f" y="13.0f" z="0.0f"/>
+      <Anchor x="0.0f" y="12.f" z="0.f"/>
+      <V1 x="6.0f" y="0.0f" z="0.0f"/>
+      <V2 x="0.0f" y="0.0f" z="2.0f"/>
+      <Power x="1.f" y="1.f" z="1.f"/>
+    </Light>
+    <Photon>
+      <TreeNum v="100"/>
+      <GlobalLaunchCluster v="8"/>
+      <GlobalCellSize v="8"/>
+      <CausticsLaunchCluster v="64"/>
+      <ShadowCellSize v="4"/>
+    </Photon>
+    <Gather>
+      <GlobalRadius2 v="10.f"/>
+      <CausticsRadius2 v="0"/>
+      <DirectCoeff v="1.f"/>
+      <GlobalCoeff v="400.f"/>
+      <CausticsCoeff v="0.1f"/>
+    </Gather>
+  </Model>
+  <Model ID="camaro" >
+    <FileName>C:/Users/Administrator/Desktop/scene/Camaro/Camaro/Camaro.obj</FileName>
+    <LargestDist v="0"/>
+  </Model>
+  <Model ID="cornell" >
+    <FileName>C:/Users/Administrator/Desktop/scene/Cornell_Box/CornellBox/CornellBox-Water.obj</FileName>
+    <LargestDist v="0"/>
+    <Camera>
+      <!--<Eye x="-4.1f" y="7.5f" z="3.16f"/>
+      <Lookat x="-1.33f" y="7.5f" z="3.16f"/>-->
+      <Eye x="-0.32f" y="0.73f" z="4.13f"/>
+      <Lookat x="-0.29f" y="0.73f" z="3.78f"/>
+      <Up x="0.f" y="1.f" z="0.f"/>
+      <Vfov v="30.f"/>
+      <Faspect v="20.f"/>
+    </Camera>
+    <Light>
+      <LightType v="1"/>
+      <Radius v="0.f"/>
+      <!--
+      <Position x="-4.0f" y="12.f" z="0.0f"/>
+      <Anchor x="-4.0f" y="12.f" z="0.f"/>
+      -->
+      <Position x="0.2f" y="1.60f" z="2.5f"/>
+      <Anchor x="0.2f" y="1.55f" z="2.5f"/>
+      <V1 x="2.f" y="0.f" z="0.0f"/>
+      <V2 x="0.0f" y="0.0f" z="2.0f"/>
+      <Power x="1.f" y="1.f" z="1.f"/>
+    </Light>
+    <Photon>
+      <TreeNum v="1"/>
+      <GlobalLaunchCluster v="512"/>
+      <GlobalCellSize v="4"/>
+      <CausticsLaunchCluster v="128"/>
+    </Photon>
+    <Gather>
+      <GlobalRadius2 v="0.02f"/>
+      <CausticsRadius2 v="0.1f"/>
+      <DirectCoeff v="4.0f"/>
+      <GlobalCoeff v="0.05f"/>
+      <CausticsCoeff v="0.02f"/>
+    </Gather>
+  </Model>
+  <Model ID="crytek-sponza" >
+    <FileName>C:/Users/Administrator/Desktop/scene/Crytek_Sponza/crytek-sponza/sponza.obj</FileName>
+    <LargestDist v="0"/>
+    <Camera>
+      <Eye x="-888.5f" y="696.f" z="-23.0f"/>
+      <Lookat x="-5.f" y="696.f" z="-23.0f"/>
+      <Up x="0.f" y="1.f" z="0.f"/>
+      <Vfov v="30.f"/>
+      <Faspect v="30.f"/>
+    </Camera>
+    <Light>
+      <LightType v="1"/>
+      <Radius v="0.f"/>
+      <Position x="166.f" y="1103.0f" z="-43.0f"/>
+      <Anchor x="0.0f" y="1100.f" z="0.f"/>
+      <V1 x="100.0f" y="0.0f" z="0.0f"/>
+      <V2 x="0.0f" y="0.0f" z="200.0f"/>
+      <Power x="1.f" y="1.f" z="1.f"/>
+    </Light>
+    <Photon>
+      <TreeNum v="1"/>
+      <GlobalLaunchCluster v="128"/>
+      <GlobalCellSize v="8"/>
+      <CausticsLaunchCluster v="64"/>
+      <ShadowCellSize v="4"/>
+    </Photon>
+    <Gather>
+      <GlobalRadius2 v="1600.f"/>
+      <CausticsRadius2 v="0"/>
+      <DirectCoeff v="1.f"/>
+      <GlobalCoeff v="500000.f"/>
+      <CausticsCoeff v="0.1f"/>
+    </Gather>
+  </Model>
+  <Model ID="dragon" >
+    <FileName>C:/Users/Administrator/Desktop/scene/Dragon/dragon.obj</FileName>
+    <LargestDist v="0"/>
+  </Model>
+  <Model ID="head" >
+    <FileName>C:/Users/Administrator/Desktop/scene/Head/head.obj</FileName>
+    <LargestDist v="0"/>
+  </Model>
+  <Model ID="raiden" >
+    <FileName>C:/Users/Administrator/Desktop/scene/mgs4_raiden/Raiden.obj</FileName>
+    <LargestDist v="0"/>
+  </Model>
+  <Model ID="mitsuba" >
+    <FileName>C:/Users/Administrator/Desktop/scene/Mitsuba/mitsuba/mitsuba-sphere.obj</FileName>
+    <LargestDist v="0"/>
+  </Model>
+  <Model ID="San_Miguel" >
+    <FileName>C:/Users/Administrator/Desktop/scene/San_Miguel/san-miguel.obj</FileName>
+    <LargestDist v="0"/>
+  </Model>
+  <Model ID="sibenik" >
+    <FileName>C:/Users/Administrator/Desktop/scene/Sibenik_Cathedral/sibenik/sibenik.obj</FileName>
+    <LargestDist v="0"/>
+    <Camera>
+      <Eye x="-4.23f" y="-7.1f" z="2.3f"/>
+      <Lookat x="0.2f" y="-7.1f" z="2.0f"/>
+      <Up x="0.f" y="1.f" z="0.f"/>
+      <Vfov v="30.f"/>
+      <Faspect v="30.f"/>
+    </Camera>
+    <Light>
+      <LightType v="1"/>
+      <Radius v="0.f"/>
+      <Position x="0.0f" y="4.0f" z="0.0f"/>
+      <Anchor x="0.0f" y="3.5f" z="0.f"/>
+      <V1 x="6.0f" y="0.0f" z="0.0f"/>
+      <V2 x="0.0f" y="0.0f" z="2.0f"/>
+      <Power x="1.f" y="1.f" z="1.f"/>
+    </Light>
+    <Photon>
+      <TreeNum v="400"/>
+      <GlobalLaunchCluster v="8"/>
+      <GlobalCellSize v="8"/>
+      <CausticsLaunchCluster v="64"/>
+      <ShadowCellSize v="4"/>
+    </Photon>
+    <Gather>
+      <GlobalRadius2 v="100.f"/>
+      <CausticsRadius2 v="0"/>
+      <DirectCoeff v="1.f"/>
+      <GlobalCoeff v="400.f"/>
+      <CausticsCoeff v="0.1f"/>
+    </Gather>
+  </Model>
+  <Model ID="ocornell" >
+    <FileName>C:/Users/Administrator/Desktop/scene/Cornell_Box/CornellBox/CornellBox-Original.obj</FileName>
+    <LargestDist v="0"/>
+    <Camera>
+      <!--<Eye x="-4.1f" y="7.5f" z="3.16f"/>
+      <Lookat x="-1.33f" y="7.5f" z="3.16f"/>-->
+      <Eye x="-0.38f" y="1.97f" z="5.68f"/>
+      <Lookat x="-0.38f" y="1.97f" z="3.78f"/>
+      <Up x="0.f" y="1.f" z="0.f"/>
+      <Vfov v="30.f"/>
+      <Faspect v="20.f"/>
+    </Camera>
+    <Light>
+      <LightType v="1"/>
+      <Radius v="0.f"/>
+      <!--
+      <Position x="-4.0f" y="12.f" z="0.0f"/>
+      <Anchor x="-4.0f" y="12.f" z="0.f"/>
+      -->
+      <Position x="0.f" y="1.97f" z="0.f"/>
+      <Anchor x="0.f" y="1.80f" z="0.0f"/>
+      <V1 x="0.1f" y="0.f" z="0.0f"/>
+      <V2 x="0.0f" y="0.0f" z="0.1f"/>
+      <Power x="1.f" y="1.f" z="1.f"/>
+    </Light>
+    <Photon>
+      <TreeNum v="1"/>
+      <GlobalLaunchCluster v="512"/>
+      <GlobalCellSize v="4"/>
+      <CausticsLaunchCluster v="128"/>
+    </Photon>
+    <Gather>
+      <GlobalRadius2 v="0.02f"/>
+      <CausticsRadius2 v="0.1f"/>
+      <DirectCoeff v="4.0f"/>
+      <GlobalCoeff v="0.05f"/>
+      <CausticsCoeff v="0.02f"/>
+    </Gather>
+  </Model>
+</Models>

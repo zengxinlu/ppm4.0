@@ -1,0 +1,489 @@
+
+/*
+* Copyright (c) 2008 - 2009 NVIDIA Corporation.  All rights reserved.
+*
+* NVIDIA Corporation and its licensors retain all intellectual property and proprietary
+* rights in and to this software, related documentation and any modifications thereto.
+* Any use, reproduction, disclosure or distribution of this software and related
+* documentation without an express license agreement from NVIDIA Corporation is strictly
+* prohibited.
+*
+* TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THIS SOFTWARE IS PROVIDED *AS IS*
+* AND NVIDIA AND ITS SUPPLIERS DISCLAIM ALL WARRANTIES, EITHER EXPRESS OR IMPLIED,
+* INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+* PARTICULAR PURPOSE.  IN NO EVENT SHALL NVIDIA OR ITS SUPPLIERS BE LIABLE FOR ANY
+* SPECIAL, INCIDENTAL, INDIRECT, OR CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT
+* LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF
+* BUSINESS INFORMATION, OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF THE USE OF OR
+* INABILITY TO USE THIS SOFTWARE, EVEN IF NVIDIA HAS BEEN ADVISED OF THE POSSIBILITY OF
+* SUCH DAMAGES
+*/
+
+#include <optix.h>
+#include <optixu/optixu_math_namespace.h>
+#include "random.h"
+#include "ppm.h"
+#include "path_tracer.h"
+
+
+using namespace optix;
+
+//
+// Scene wide variables
+//
+rtDeclareVariable(float,         scene_epsilon, , );
+rtDeclareVariable(rtObject,      top_object, , );
+rtDeclareVariable(float,         frame_number , , );
+
+
+rtDeclareVariable(PPMLight,      light , , );
+//
+// Ray generation program
+//
+rtBuffer<float3, 2>              direct_buffer;						//直接光照
+rtBuffer<HitRecord, 2>           rtpass_output_buffer;				//光线追综的光子图
+rtBuffer<uint2, 2>               image_rnd_seeds;					//随机种子
+rtBuffer<float, 2>               primary_edge_buffer;
+rtBuffer<float, 2>               secondary_edge_buffer;
+rtBuffer<int4, 2>                sp_triangle_info_buffer;
+rtBuffer<float3, 2>              sp_position_buffer;
+rtBuffer<float3, 2>              sp_normal_buffer;
+rtBuffer<float, 2>               sp_radius_buffer;
+
+
+rtDeclareVariable(float,         rtpass_default_radius2, , );
+rtDeclareVariable(float3,        rtpass_eye, , );
+rtDeclareVariable(float3,        rtpass_U, , );
+rtDeclareVariable(float3,        rtpass_V, , );
+rtDeclareVariable(float3,        rtpass_W, , );
+rtDeclareVariable(uint2,		 launch_index, rtLaunchIndex, );
+
+
+// Generate random unsigned int in [0, 2^24)
+static __host__ __device__ __inline__ unsigned int isCastToLight(optix::Ray &ray, PPMLight &now_light)
+{
+	// original ray start
+	float3 p0 = now_light.anchor + now_light.v1 + now_light.v2;
+	float3 p1 = now_light.anchor + now_light.v1 - now_light.v2;
+	float3 p2 = now_light.anchor - now_light.v1 + now_light.v2;
+	float3 p3 = now_light.anchor - now_light.v1 - now_light.v2;
+
+	float3 n;
+	float  t, beta, gamma;
+	if( intersect_triangle( ray, p0, p1, p2, n, t, beta, gamma ) ) {
+	}
+	else if( intersect_triangle( ray, p1, p3, p2, n, t, beta, gamma ) ) {
+	}
+	else
+		return 0;
+	float3 hit_light_point = ray.origin + t*ray.direction;
+	
+	// Shadow ray
+	ShadowPRD prd;
+	prd.attenuation = 1.0f;
+	optix::Ray shadow_ray( hit_light_point, -ray.direction, RayTypeShadowRay, scene_epsilon, t);
+	rtTrace( top_object, shadow_ray, prd );
+	// no shelter
+	if (prd.attenuation < 1.0f)
+		return 0;
+	return 1;
+}
+
+RT_PROGRAM void rtpass_camera()
+{
+	float2 screen = make_float2( rtpass_output_buffer.size() );
+	
+	uint2   seed   = image_rnd_seeds[launch_index];                       // If we start writing into this buffer here we will
+	float2 sample = make_float2( rnd(seed.x), rnd(seed.y) );				// need to make it an INPUT_OUTPUT buffer.  For now it
+	image_rnd_seeds[launch_index] = seed;                                // is just INPUT
+	
+	if (frame_number < 1.0f)
+		sample = make_float2( 0.5f, 0.5f );								// 第一帧 标准方向
+	//float2 sample = make_float2( 0.5f, 0.5f ); 
+
+	float2 d = ( make_float2(launch_index) + sample ) / screen * 2.0f - 1.0f;
+	float3 ray_origin = rtpass_eye;
+	float3 ray_direction = normalize(d.x*rtpass_U + d.y*rtpass_V + rtpass_W);
+	
+	uint rec_flags = rtpass_output_buffer[launch_index].flags;
+	if( frame_number < 1.0f || (rec_flags & PPM_HIT))
+	{
+		HitRecord& rec = rtpass_output_buffer[ launch_index ];
+		if (frame_number < 1.0f)
+		{
+			sp_triangle_info_buffer[launch_index] = make_int4(-1);
+			direct_buffer[launch_index] = make_float3(0);
+			rec.flags = 0;
+			rec.photon_count = 0;
+		}
+		rec.attenuated_Kd = make_float3(0);
+
+		optix::Ray ray(ray_origin, ray_direction, RayTypeRayTrace, scene_epsilon);
+
+
+		// Check if this is a light source
+		if( isCastToLight(ray, light) ) {
+			rec.attenuated_Kd = make_float3(1.0, 1.0, 1.0); 
+			rec.flags = 0u;
+			return;
+		}
+		rec.accum_atten = 0;
+
+		HitPRD prd;
+		// rec.ray_dir = ray_direction; // set in rtpass_closest_hit
+		prd.attenuation = make_float3( 1.0f );
+		prd.ray_depth   = 0u; 
+		rtTrace( top_object, ray, prd );
+	}
+}
+
+// 
+// Closest hit material
+// 
+rtDeclareVariable(float3,  Ks, , );
+rtDeclareVariable(float3,  Kd, , );
+rtDeclareVariable(float,  Alpha, , );
+rtDeclareVariable(float3,  grid_color, , );
+rtDeclareVariable(uint,    use_grid, , );
+rtDeclareVariable(float3,  emitted, , );
+
+rtDeclareVariable(float3, texcoord, attribute texcoord, ); 
+rtTextureSampler<float4, 2> diffuse_map;
+rtTextureSampler<float4, 2> specular_map;
+
+rtDeclareVariable(float3, geometric_normal, attribute geometric_normal, ); 
+rtDeclareVariable(float3, shading_normal,   attribute shading_normal, ); 
+rtDeclareVariable(int, is_soft_surface, attribute is_soft_surface, ); 
+rtDeclareVariable(int4, triangle_info, attribute triangle_info, ); 
+rtDeclareVariable(float, triangle_area, attribute triangle_area, ); 
+
+rtDeclareVariable(HitPRD, hit_prd, rtPayload, );
+
+rtDeclareVariable(optix::Ray, ray,          rtCurrentRay, );
+rtDeclareVariable(float,      t_hit,        rtIntersectionDistance, );
+
+
+static __device__ __inline__ void aroundDirection(float3& d,  const float2& d_sample, float SIN_DEGREE)
+{
+	float3 U, V, W;
+	createONB( d, U, V, W);
+	d = normalize(W + (d_sample.x * U + d_sample.y * V) * SIN_DEGREE);
+}
+
+RT_PROGRAM void rtpass_closest_hit()
+{
+// 	// Check if this is a light source
+// 	if( fmaxf( emitted ) > 0.0f && hit_prd.ray_depth > 0) {
+// 		HitRecord& rec = rtpass_output_buffer[ launch_index ];
+// 		rec.attenuated_Kd = emitted*hit_prd.attenuation; 
+// 		rec.flags = 0u;
+// 		return;
+// 	}
+
+	float3 direction    = ray.direction;
+	float3 origin       = ray.origin;
+	float3 world_shading_normal   = normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, shading_normal ) );
+	float3 world_geometric_normal = normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, geometric_normal ) );
+	float3 ffnormal     = faceforward( world_shading_normal, -direction, world_geometric_normal );
+	float3 hit_point    = origin + t_hit*direction;
+	float3 Kd			= make_float3( tex2D( diffuse_map,  texcoord.x, texcoord.y) );
+	float3 Ks			= make_float3( tex2D( specular_map, texcoord.x, texcoord.y) );
+	float3 temp_Kd = Kd;
+	float3 temp_Ks = Ks;
+		
+	// Check if this is a light source
+	if( isCastToLight(ray, light) ) {
+		float3 add_color = 
+			//make_float3(10000.0f);
+			fmaxf( hit_prd.attenuation * 1.0f, make_float3(0) );
+		float3 direct_flux = direct_buffer[launch_index] + add_color;
+		direct_buffer[launch_index] = direct_flux;
+		return;
+	}
+
+	// 漫反射
+	if( fmaxf( temp_Kd ) > 0.0f ) { 
+		
+		// We hit a diffuse surface; record hit and return
+		HitRecord rec = rtpass_output_buffer[launch_index];
+		rec.flags = PPM_HIT;
+
+		if ( !(fmaxf(rec.attenuated_Kd) > 0 ) )
+		{
+			rec.position = hit_point; 
+			rec.normal = ffnormal;
+
+			if( !use_grid ) 
+			{
+				rec.attenuated_Kd = temp_Kd * hit_prd.attenuation;
+			} 
+			else 
+			{
+				float grid_size = 50.0f; 
+				float line_size = 2.0f; 
+				float xx = ( hit_point.x + 1025.0f ) / grid_size;
+				xx = ( xx - static_cast<float>( static_cast<int>( xx ) ) ) * grid_size;
+				float zz = ( hit_point.z + 1025.0f ) / grid_size;
+				zz = ( zz - static_cast<float>( static_cast<int>( zz ) ) ) * grid_size;
+				if( xx < line_size  || zz < line_size )
+					rec.attenuated_Kd = grid_color * hit_prd.attenuation;
+				else
+					rec.attenuated_Kd = temp_Kd * hit_prd.attenuation;
+			}
+
+			if (frame_number < 1.0f)
+			{
+				rec.photon_count = 0;
+				rec.accum_atten = 0.0f;
+				rec.flux = make_float3(0.0f, 0.0f, 0.0f);
+				rec.radius2 = rtpass_default_radius2;
+				sp_position_buffer[launch_index] = hit_point;
+				sp_radius_buffer[launch_index] = sqrt(rtpass_default_radius2);
+
+				sp_triangle_info_buffer[launch_index] = triangle_info;
+				sp_triangle_info_buffer[launch_index].x = launch_index.x;
+				sp_triangle_info_buffer[launch_index].y = launch_index.y;
+
+// 				sp_triangle_info_buffer[launch_index].w = triangle_info.w;
+				sp_triangle_info_buffer[launch_index].x = is_soft_surface;
+				sp_normal_buffer[launch_index] = ffnormal;
+			}
+		}
+		rtpass_output_buffer[launch_index] = rec;
+
+		// 计算直接光照
+		float max_sample_num = 1.0f;
+		if (light.is_area_light)
+			max_sample_num = 3.0f;
+		float3  light_atten_add = make_float3(0);
+		for (float my_i = 0.0f; my_i < max_sample_num; my_i ++)
+		{
+			for (float my_j = 0.0f; my_j < max_sample_num; my_j ++)
+			{
+				uint2  seed   = image_rnd_seeds[launch_index];
+				float2 sample = make_float2( rnd( seed.x ), rnd( seed.y ) ); 
+				image_rnd_seeds[launch_index] = seed;
+				// Direct light
+				float3 shadow_ray_dir = light.anchor + light.v1 * ( (my_i + (sample.x))/max_sample_num * 2.f - 1.f) + 
+					light.v2 * ( (my_j + (sample.y))/max_sample_num * 2.f - 1.f) - hit_point;
+				float dist_to_l = sqrtf(dot(shadow_ray_dir, shadow_ray_dir));
+				shadow_ray_dir /= dist_to_l;
+				float light_dir_l;
+				//light_dir_l = 1.0f;
+				light_dir_l = -dot(light.direction, shadow_ray_dir)*0.5f + 0.5f;
+				if (light_dir_l < 0)
+					continue;
+				//light_dir_l = pow( light_dir_l, 1.0f );	//sponza
+				light_dir_l = pow( light_dir_l, 3.0f ); //conference
+				float3 H = normalize(shadow_ray_dir - direction);
+				float n_dot_l = dot(ffnormal, shadow_ray_dir), lt_l = dot(ffnormal, H);
+				if (lt_l < 0)
+					lt_l = 0;
+				// light is on the contrary
+				if (n_dot_l > 0.f)
+				{
+					// Shadow ray
+					ShadowPRD prd;
+					prd.attenuation = 1.0f;
+					optix::Ray shadow_ray( hit_point, shadow_ray_dir, RayTypeShadowRay, scene_epsilon, dist_to_l - scene_epsilon);
+					rtTrace( top_object, shadow_ray, prd );
+					float Falloff = 1.0f;		// Conference
+					//float Falloff = 1.0f/(dist_to_l * 100.f+1.f);
+					//float Falloff = 1.0f/(dist_to_l *dist_to_l*100.f+1.f);
+					//light_atten_add += tex_Kd*n_dot_l * Falloff *prd.attenuation;
+					light_atten_add += (temp_Kd*n_dot_l + temp_Ks*pow(lt_l, 42.f) * Falloff)*prd.attenuation*light_dir_l;
+				}
+
+			}
+		}
+		light_atten_add /= (max_sample_num*max_sample_num);
+		// 	rec.d.w = rec_accum_atten + light_atten;
+		// 	float avg_atten = rec.d.w / (frame_number+1.0f);
+		// 	float3 direct_flux = light.power * avg_atten * rec_atten_Kd;
+
+		if( fmaxf( emitted ) > 0.0f )
+			light_atten_add = make_float3(2.0);
+		float3 add_color = fmaxf( light_atten_add * hit_prd.attenuation * Kd, make_float3(0) );
+		float3 direct_flux = direct_buffer[launch_index] + add_color;
+		direct_buffer[launch_index] = direct_flux;
+		return;
+	}
+
+
+	// if it is fraction
+	if (Alpha < 1)
+	{
+		HitPRD refract_prd = hit_prd;
+		refract_prd.ray_depth ++;
+
+		float refraction_facter = 1.5;
+		float critical_sina = 1/refraction_facter;
+		float critical_radian = asinf(critical_sina);
+
+		float max_incidence_radian = M_PIf/2.0, max_emergent_radian = M_PIf * 41.8f/180.0f;
+		float top_refacter = 0.96f;
+		float bottom_incidence_t = powf(1 - top_refacter, 1/max_incidence_radian);
+		float bottom_emergent_t = powf(1 - top_refacter, 1/max_emergent_radian);
+		float K_refacter = 1;
+		
+		float3 R;
+		// 折射
+		if (refract(R, direction, world_shading_normal, refraction_facter) == true)
+		{
+			// 入射角
+			float incidence_sina = sqrtf( 1.0 - powf( fabsf(dot(direction, world_shading_normal)), 2.0f) );
+			float incidence_radian = asinf(incidence_sina);
+
+			// 折射率
+			if ( dot(direction, world_shading_normal) < 0)
+				K_refacter = 1 - pow(bottom_incidence_t, max_incidence_radian - incidence_radian);
+			else
+				K_refacter = 1 - pow(bottom_emergent_t, max_emergent_radian - incidence_radian);
+
+			refract_prd.attenuation *= K_refacter;
+			temp_Ks = make_float3(1 - K_refacter);
+			optix::Ray refr_ray( hit_point, R, RayTypeRayTrace, scene_epsilon );
+			rtTrace( top_object, refr_ray, refract_prd );
+		}
+		// 全反射
+		else
+		{
+			refract_prd.attenuation *= 1.0f;
+			R = reflect( direction, ffnormal );
+			optix::Ray refr_ray( hit_point, R, RayTypeRayTrace, scene_epsilon );
+			rtTrace( top_object, refr_ray, refract_prd );
+			return;
+		}
+	}
+
+	if (fmaxf( temp_Ks ) > 0.0f && hit_prd.ray_depth < 4) 
+	{
+		float max_sample_num = 1.0f;
+		float3 Reflect_dir = reflect( direction, ffnormal );
+		for (float my_i = 0.0f; my_i < max_sample_num; my_i ++)
+		{
+			for (float my_j = 0.0f; my_j < max_sample_num; my_j ++)
+			{
+				uint2   seed   = image_rnd_seeds[launch_index];                       // If we start writing into this buffer here we will
+				float2 sample = make_float2( rnd(seed.x), rnd(seed.y) );      // need to make it an INPUT_OUTPUT buffer.  For now it
+				image_rnd_seeds[launch_index] = seed;                                // is just INPUT
+
+				HitPRD reflect_prd = hit_prd;
+				// Make reflection ray
+				float3 R = Reflect_dir;
+				aroundDirection(Reflect_dir, sample, 0.01f);
+				reflect_prd.attenuation *= temp_Ks * pow(dot(R, Reflect_dir), 5.0f) / (max_sample_num * max_sample_num);
+				reflect_prd.ray_depth ++;
+				optix::Ray refl_ray( hit_point, R, RayTypeRayTrace, scene_epsilon );
+				rtTrace( top_object, refl_ray, reflect_prd );
+			}
+		}
+	}
+}
+rtDeclareVariable(float, primary_edge, attribute primary_edge, ); 
+rtDeclareVariable(float, secondary_edge, attribute secondary_edge, ); 
+RT_PROGRAM void rtpass_closest_hit_cornel()
+{
+	// Check if this is a light source
+	if( fmaxf( emitted ) > 0.0f ) {
+		HitRecord& rec = rtpass_output_buffer[ launch_index ];
+		rec.attenuated_Kd = emitted*hit_prd.attenuation; 
+		rec.flags = 0u;
+		return;
+	}
+
+	float3 direction    = ray.direction;
+	float3 origin       = ray.origin;
+	float3 world_shading_normal   = normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, shading_normal ) );
+	float3 world_geometric_normal = normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, geometric_normal ) );
+	float3 ffnormal     = faceforward( world_shading_normal, -direction, world_geometric_normal );
+	float3 hit_point    = origin + t_hit*direction;
+
+	if( fmaxf( Kd ) > 0.0f ) { 
+		// We hit a diffuse surface; record hit and return
+		HitRecord rec = rtpass_output_buffer[launch_index];
+		rec.position = hit_point; 
+		rec.normal = ffnormal;
+		if( 1 || !use_grid ) 
+		{
+			rec.attenuated_Kd = Kd * hit_prd.attenuation;
+		} 
+		else 
+		{
+			float grid_size = 50.0f; 
+			float line_size = 2.0f; 
+			float xx = ( hit_point.x + 1025.0f ) / grid_size;
+			xx = ( xx - static_cast<float>( static_cast<int>( xx ) ) ) * grid_size;
+			float zz = ( hit_point.z + 1025.0f ) / grid_size;
+			zz = ( zz - static_cast<float>( static_cast<int>( zz ) ) ) * grid_size;
+			if( xx < line_size  || zz < line_size )
+				rec.attenuated_Kd = grid_color * hit_prd.attenuation;
+			else
+				rec.attenuated_Kd = Kd * hit_prd.attenuation;
+		}
+		rec.flags = PPM_HIT;
+		if (frame_number < 1.0f)
+		{
+			rec.photon_count = 0;
+			rec.accum_atten = 0.0f;
+			rec.flux = make_float3(0.0f, 0.0f, 0.0f);
+			primary_edge_buffer[launch_index] = 0;
+			secondary_edge_buffer[launch_index] = 0;
+			rec.radius2 = rtpass_default_radius2;
+		}
+		primary_edge_buffer[launch_index] += primary_edge;
+		secondary_edge_buffer[launch_index] += secondary_edge;
+
+		rtpass_output_buffer[launch_index] = rec;
+	} else {
+		// Make reflection ray
+		hit_prd.attenuation = hit_prd.attenuation * Ks;
+		hit_prd.ray_depth++;
+		float3 R = reflect( direction, ffnormal );
+		optix::Ray refl_ray( hit_point, R, RayTypeRayTrace, scene_epsilon );
+		rtTrace( top_object, refl_ray, hit_prd );
+	}
+}
+
+//
+// Miss program
+//
+rtTextureSampler<float4, 2> envmap;
+RT_PROGRAM void rtpass_miss()
+{
+	float theta = atan2f( ray.direction.x, ray.direction.z );
+	float phi   = M_PIf * 0.5f -  acosf( ray.direction.y );
+	float u     = (theta + M_PIf) * (0.5f * M_1_PIf);
+	float v     = 0.5f * ( 1.0f + sin(phi) );
+	float3 result = make_float3(tex2D(envmap, 1-u, v));
+
+	HitRecord& rec = rtpass_output_buffer[launch_index];
+	float3 direct_flux = direct_buffer[launch_index] + hit_prd.attenuation * result;
+	direct_buffer[launch_index] = direct_flux;
+}
+
+/*
+rtDeclareVariable(float3, rtpass_bg_color, , );
+RT_PROGRAM void rtpass_miss()
+{
+HitPRD& prd = hit_prd.reference();
+uint2 index = make_uint2( launch_index.get() );
+HitRecord& rec = rtpass_output_buffer[index];
+
+rec.flags = 0u;
+rec.attenuated_Kd = prd.attenuation * rtpass_bg_color;
+}
+*/
+
+//       
+// Stack overflow program
+//
+rtDeclareVariable(float3, rtpass_bad_color, , );
+RT_PROGRAM void rtpass_exception()
+{
+	HitRecord& rec = rtpass_output_buffer[launch_index];
+
+	//rec.flags = PPM_OVERFLOW;
+	rec.attenuated_Kd = rtpass_bad_color;
+}
+

@@ -1,0 +1,12 @@
+Tasks:
+1. RTpass Runtime error  ----  solved
+2. Progressive error estimation
+3. Rendering Termination
+4. Multiply light sources in scene Box
+5. Print results to file.
+
+Run all scenes.
+
+Aim:
+1. Improve performance
+2. Obtain details
