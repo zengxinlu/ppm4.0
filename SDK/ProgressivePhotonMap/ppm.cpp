@@ -203,7 +203,7 @@ public:
 		, m_frame_number( 0 )
 		, m_display_debug_buffer( false )
 		, m_print_timings ( false )
-		, m_test_scene( Cornel_Box_Scene )
+		, m_test_scene(Box_Scene)
 		, m_light_phi( 2.19f )
 		, m_light_theta( 1.15f )
 		, m_split_choice(LongestDim)
@@ -218,7 +218,7 @@ public:
 		if (model == "conference")		setTestScene(ProgressivePhotonScene::Conference_Scene);
 		if (model == "sponza")			setTestScene(ProgressivePhotonScene::Sponza_Scene);
 		if (model == "smallroom")		setTestScene(ProgressivePhotonScene::Small_Room_Scene);
-		if (model == "clock")			setTestScene(ProgressivePhotonScene::Clock_Scene);
+		if (model == "clocks")			setTestScene(ProgressivePhotonScene::Clock_Scene);
 		if (model == "echess")			setTestScene(ProgressivePhotonScene::EChess_Scene);
 		m_model_file = std::string(sutil::samplesDir()) + "/progressivePhotonMap/scenes/" + model + "/" + model + modelNum + ".yaml";
 	}	

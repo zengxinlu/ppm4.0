@@ -75,7 +75,7 @@ GLUTDisplay::contDraw_E GLUTDisplay::m_app_continuous_mode = CDNone;
 GLUTDisplay::contDraw_E GLUTDisplay::m_cur_continuous_mode = CDNone;
 
 bool           GLUTDisplay::m_display_frames       = true;
-bool           GLUTDisplay::m_save_frames_to_file  = true;
+bool           GLUTDisplay::m_save_frames_to_file  = false;
 std::string    GLUTDisplay::m_save_frames_basename = "result";
 
 std::string    GLUTDisplay::m_camera_pose          = "";
@@ -93,9 +93,9 @@ bool           GLUTDisplay::m_sRGB_supported       = false;
 bool           GLUTDisplay::m_use_sRGB             = false;
 
 bool           GLUTDisplay::m_initialized          = false;
-bool           GLUTDisplay::m_benchmark_no_display = true;
+bool           GLUTDisplay::m_benchmark_no_display = false;
 unsigned int   GLUTDisplay::m_warmup_frames        = 50u;//50u;
-unsigned int   GLUTDisplay::m_timed_frames         = 5000u;//30u;
+unsigned int   GLUTDisplay::m_timed_frames         = 10101u;//30u;
 double         GLUTDisplay::m_warmup_start         = 0;
 double         GLUTDisplay::m_warmup_time          = 10.0;
 double         GLUTDisplay::m_benchmark_time       = 10.0;

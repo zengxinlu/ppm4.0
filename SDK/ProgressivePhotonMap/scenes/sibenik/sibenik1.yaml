@@ -13,5 +13,5 @@ light_data:
   radius: 0.03490658504 
   power: [1.0, 1.0, 1.0]
 default_radius: 0.0009
-blend_mothod: [1.0, 8.0]
+blend_mothod: [1.0, 10.0]
 filename: "scenes/sibenik/sibenik.obj"
