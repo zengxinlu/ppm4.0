@@ -192,7 +192,7 @@ static char* TestSceneNames[] = {
 	"Sponza_Scene",
 	"Box_Scene",
 	"Sibenik_Scene",
-	"Torus_Scene"
+	"Torus_Scene",
 	"EChess_Scene"
 };
 class ProgressivePhotonScene : public SampleScene
