@@ -40,9 +40,9 @@ rtDeclareVariable(PPMLight,      light , , );
 //
 // Ray generation program
 //
-rtBuffer<float3, 2>              direct_buffer;						//Ö±½Ó¹âÕÕ
-rtBuffer<HitRecord, 2>           rtpass_output_buffer;				//¹âÏß×·×ÛµÄ¹â×ÓÍ¼
-rtBuffer<uint2, 2>               image_rnd_seeds;					//Ëæ»úÖÖ×Ó
+rtBuffer<float3, 2>              direct_buffer;						//Ö±ï¿½Ó¹ï¿½ï¿½ï¿½
+rtBuffer<HitRecord, 2>           rtpass_output_buffer;				//ï¿½ï¿½ï¿½ï¿½×·ï¿½ÛµÄ¹ï¿½ï¿½ï¿½Í¼
+rtBuffer<uint3, 2>               image_rnd_seeds;					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 rtBuffer<float, 2>               primary_edge_buffer;
 rtBuffer<float, 2>               secondary_edge_buffer;
 rtBuffer<int4, 2>                sp_triangle_info_buffer;
@@ -81,7 +81,7 @@ static __host__ __device__ __inline__ unsigned int isCastToLight(optix::Ray &ray
 	// Shadow ray
 	ShadowPRD prd;
 	prd.attenuation = 1.0f;
-	optix::Ray shadow_ray(hit_light_point, -ray.direction, RayTypeShadowRay, scene_epsilon, t);
+	optix::Ray shadow_ray( hit_light_point, -ray.direction, RayTypeShadowRay, scene_epsilon, t);
 	rtTrace( top_object, shadow_ray, prd );
 	// no shelter
 	if (prd.attenuation < 1.0f)
@@ -93,12 +93,12 @@ RT_PROGRAM void rtpass_camera()
 {
 	float2 screen = make_float2( rtpass_output_buffer.size() );
 	
-	uint2   seed   = image_rnd_seeds[launch_index];                       // If we start writing into this buffer here we will
+	uint3   seed   = image_rnd_seeds[launch_index];                       // If we start writing into this buffer here we will
 	float2 sample = make_float2( rnd(seed.x), rnd(seed.y) );				// need to make it an INPUT_OUTPUT buffer.  For now it
 	image_rnd_seeds[launch_index] = seed;                                // is just INPUT
 	
-	if (frame_number < 1.0f)
-		sample = make_float2( 0.5f, 0.5f );								// µÚÒ»Ö¡ ±ê×¼·½Ïò
+	//if (frame_number < 1.0f)
+		//sample = make_float2( 0.5f, 0.5f );								// ï¿½ï¿½Ò»Ö¡ ï¿½ï¿½×¼ï¿½ï¿½ï¿½ï¿½
 	//float2 sample = make_float2( 0.5f, 0.5f ); 
 
 	float2 d = ( make_float2(launch_index) + sample ) / screen * 2.0f - 1.0f;
@@ -120,7 +120,7 @@ RT_PROGRAM void rtpass_camera()
 		optix::Ray ray(ray_origin, ray_direction, RayTypeRayTrace, scene_epsilon);
 
 		// Check if this is a light source
-		if (isCastToLight(ray, light)) {
+		if( isCastToLight(ray, light) ) {
 			rec.attenuated_Kd = make_float3(1.0, 1.0, 1.0); 
 			rec.flags = 0u;
 			return;
@@ -198,7 +198,7 @@ RT_PROGRAM void rtpass_closest_hit()
 		return;
 	}
 
-	// Âþ·´Éä
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	if( fmaxf( temp_Kd ) > 0.0f ) { 
 		
 		// We hit a diffuse surface; record hit and return
@@ -248,7 +248,7 @@ RT_PROGRAM void rtpass_closest_hit()
 		}
 		rtpass_output_buffer[launch_index] = rec;
 
-		// ¼ÆËãÖ±½Ó¹âÕÕ
+		// ï¿½ï¿½ï¿½ï¿½Ö±ï¿½Ó¹ï¿½ï¿½ï¿½
 		float max_sample_num = 1.0f;
 		if (light.is_area_light)
 			max_sample_num = 3.0f;
@@ -257,7 +257,7 @@ RT_PROGRAM void rtpass_closest_hit()
 		{
 			for (float my_j = 0.0f; my_j < max_sample_num; my_j ++)
 			{
-				uint2  seed   = image_rnd_seeds[launch_index];
+				uint3  seed   = image_rnd_seeds[launch_index];
 				float2 sample = make_float2( rnd( seed.x ), rnd( seed.y ) ); 
 				image_rnd_seeds[launch_index] = seed;
 				// Direct light
@@ -325,14 +325,14 @@ RT_PROGRAM void rtpass_closest_hit()
 		float K_refacter = 1;
 		
 		float3 R;
-		// ÕÛÉä
+		// ï¿½ï¿½ï¿½ï¿½
 		if (refract(R, direction, world_shading_normal, refraction_facter) == true)
 		{
-			// ÈëÉä½Ç
+			// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			float incidence_sina = sqrtf( 1.0 - powf( fabsf(dot(direction, world_shading_normal)), 2.0f) );
 			float incidence_radian = asinf(incidence_sina);
 
-			// ÕÛÉäÂÊ
+			// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			if ( dot(direction, world_shading_normal) < 0)
 				K_refacter = 1 - pow(bottom_incidence_t, max_incidence_radian - incidence_radian);
 			else
@@ -343,7 +343,7 @@ RT_PROGRAM void rtpass_closest_hit()
 			optix::Ray refr_ray( hit_point, R, RayTypeRayTrace, scene_epsilon );
 			rtTrace( top_object, refr_ray, refract_prd );
 		}
-		// È«·´Éä
+		// È«ï¿½ï¿½ï¿½ï¿½
 		else
 		{
 			refract_prd.attenuation *= 1.0f;
@@ -365,7 +365,7 @@ RT_PROGRAM void rtpass_closest_hit()
 		{
 			for (float my_j = 0.0f; my_j < max_sample_num; my_j ++)
 			{
-				uint2   seed   = image_rnd_seeds[launch_index];                       // If we start writing into this buffer here we will
+				uint3   seed   = image_rnd_seeds[launch_index];                       // If we start writing into this buffer here we will
 				float2 sample = make_float2( rnd(seed.x), rnd(seed.y) );      // need to make it an INPUT_OUTPUT buffer.  For now it
 				image_rnd_seeds[launch_index] = seed;                                // is just INPUT
 
