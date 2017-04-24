@@ -37,7 +37,6 @@ rtDeclareVariable(float,         frame_number , , );
 
 
 rtDeclareVariable(PPMLight,      light , , );
-rtDeclareVariable(PPMLight,      light2 , , );
 //
 // Ray generation program
 //
@@ -106,8 +105,6 @@ RT_PROGRAM void rtpass_camera()
 	float3 ray_origin = rtpass_eye;
 	float3 ray_direction = normalize(d.x*rtpass_U + d.y*rtpass_V + rtpass_W);
 
-
-
 	uint rec_flags = rtpass_output_buffer[launch_index].flags;
 	if( frame_number < 1.0f || (rec_flags & PPM_HIT))
 	{
@@ -122,13 +119,12 @@ RT_PROGRAM void rtpass_camera()
 		rec.attenuated_Kd = make_float3(0);
 		optix::Ray ray(ray_origin, ray_direction, RayTypeRayTrace, scene_epsilon);
 
-
 		// Check if this is a light source
-	/*	if (isCastToLight(ray, light)) {
+		if (isCastToLight(ray, light)) {
 			rec.attenuated_Kd = make_float3(1.0, 1.0, 1.0); 
 			rec.flags = 0u;
 			return;
-		}*/
+		}
 		rec.accum_atten = 0;
 
 		HitPRD prd;
@@ -193,14 +189,14 @@ RT_PROGRAM void rtpass_closest_hit()
 	float3 temp_Ks = Ks;
 		
 	// Check if this is a light source
-	//if( isCastToLight(ray, light) ) {
-	//	float3 add_color = 
-	//		//make_float3(10000.0f);
-	//		fmaxf( hit_prd.attenuation * 1.0f, make_float3(0) );
-	//	float3 direct_flux = direct_buffer[launch_index] + add_color;
-	//	direct_buffer[launch_index] = direct_flux;
-	//	return;
-	//}
+	if( isCastToLight(ray, light) ) {
+		float3 add_color = 
+			//make_float3(10000.0f);
+			fmaxf( hit_prd.attenuation * 1.0f, make_float3(0) );
+		float3 direct_flux = direct_buffer[launch_index] + add_color;
+		direct_buffer[launch_index] = direct_flux;
+		return;
+	}
 
 	// Âþ·´Éä
 	if( fmaxf( temp_Kd ) > 0.0f ) { 
@@ -307,64 +303,7 @@ RT_PROGRAM void rtpass_closest_hit()
 		float3 add_color = fmaxf( light_atten_add * hit_prd.attenuation * Kd, make_float3(0) );
 		float3 direct_flux = direct_buffer[launch_index] + add_color;
 		direct_buffer[launch_index] = direct_flux;
-		
-		// double light (box scene)
-		/*
-		max_sample_num = 1.0f;
-		if (light2.is_area_light)
-			max_sample_num = 3.0f;
-		light_atten_add = make_float3(0);
-		for (float my_i = 0.0f; my_i < max_sample_num; my_i ++)
-		{
-			for (float my_j = 0.0f; my_j < max_sample_num; my_j ++)
-			{
-				uint2  seed   = image_rnd_seeds[launch_index];
-				float2 sample = make_float2( rnd( seed.x ), rnd( seed.y ) ); 
-				image_rnd_seeds[launch_index] = seed;
-				// Direct light
-				float3 shadow_ray_dir = light2.anchor + light2.v1 * ( (my_i + (sample.x))/max_sample_num * 2.f - 1.f) + 
-					light2.v2 * ( (my_j + (sample.y))/max_sample_num * 2.f - 1.f) - hit_point;
-				float dist_to_l = sqrtf(dot(shadow_ray_dir, shadow_ray_dir));
-				shadow_ray_dir /= dist_to_l;
-				float light_dir_l;
-				//light_dir_l = 1.0f;
-				light_dir_l = -dot(light2.direction, shadow_ray_dir)*0.5f + 0.5f;
-				if (light_dir_l < 0)
-					continue;
-				//light_dir_l = pow( light_dir_l, 1.0f );	//sponza
-				light_dir_l = pow( light_dir_l, 3.0f ); //conference
-				float3 H = normalize(shadow_ray_dir - direction);
-				float n_dot_l = dot(ffnormal, shadow_ray_dir), lt_l = dot(ffnormal, H);
-				if (lt_l < 0)
-					lt_l = 0;
-				// light is on the contrary
-				if (n_dot_l > 0.f)
-				{
-					// Shadow ray
-					ShadowPRD prd;
-					prd.attenuation = 1.0f;
-					optix::Ray shadow_ray( hit_point, shadow_ray_dir, RayTypeShadowRay, scene_epsilon, dist_to_l - scene_epsilon);
-					rtTrace( top_object, shadow_ray, prd );
-					float Falloff = 1.0f;		// Conference
-					//float Falloff = 1.0f/(dist_to_l * 100.f+1.f);
-					//float Falloff = 1.0f/(dist_to_l *dist_to_l*100.f+1.f);
-					//light_atten_add += tex_Kd*n_dot_l * Falloff *prd.attenuation;
-					light_atten_add += (temp_Kd*n_dot_l + temp_Ks*pow(lt_l, 42.f) * Falloff)*prd.attenuation*light_dir_l;
-				}
-
-			}
-		}
-		light_atten_add /= (max_sample_num*max_sample_num);
-		// 	rec.d.w = rec_accum_atten + light_atten;
-		// 	float avg_atten = rec.d.w / (frame_number+1.0f);
-		// 	float3 direct_flux = light2.power * avg_atten * rec_atten_Kd;
-
-		if( fmaxf( emitted ) > 0.0f )
-			light_atten_add = make_float3(2.0);
-		add_color = fmaxf( light_atten_add * hit_prd.attenuation * Kd, make_float3(0) );
-		direct_flux = direct_buffer[launch_index] + add_color;
-		direct_buffer[launch_index] = direct_flux;
-		*/
+	
 		return;
 	}
 
@@ -444,69 +383,6 @@ RT_PROGRAM void rtpass_closest_hit()
 }
 rtDeclareVariable(float, primary_edge, attribute primary_edge, ); 
 rtDeclareVariable(float, secondary_edge, attribute secondary_edge, ); 
-RT_PROGRAM void rtpass_closest_hit_cornel()
-{
-	// Check if this is a light source
-	if( fmaxf( emitted ) > 0.0f ) {
-		HitRecord& rec = rtpass_output_buffer[ launch_index ];
-		rec.attenuated_Kd = emitted*hit_prd.attenuation; 
-		rec.flags = 0u;
-		return;
-	}
-
-	float3 direction    = ray.direction;
-	float3 origin       = ray.origin;
-	float3 world_shading_normal   = normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, shading_normal ) );
-	float3 world_geometric_normal = normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, geometric_normal ) );
-	float3 ffnormal     = faceforward( world_shading_normal, -direction, world_geometric_normal );
-	float3 hit_point    = origin + t_hit*direction;
-
-	if( fmaxf( Kd ) > 0.0f ) { 
-		// We hit a diffuse surface; record hit and return
-		HitRecord rec = rtpass_output_buffer[launch_index];
-		rec.position = hit_point; 
-		rec.normal = ffnormal;
-		if( 1 || !use_grid ) 
-		{
-			rec.attenuated_Kd = Kd * hit_prd.attenuation;
-		} 
-		else 
-		{
-			float grid_size = 50.0f; 
-			float line_size = 2.0f; 
-			float xx = ( hit_point.x + 1025.0f ) / grid_size;
-			xx = ( xx - static_cast<float>( static_cast<int>( xx ) ) ) * grid_size;
-			float zz = ( hit_point.z + 1025.0f ) / grid_size;
-			zz = ( zz - static_cast<float>( static_cast<int>( zz ) ) ) * grid_size;
-			if( xx < line_size  || zz < line_size )
-				rec.attenuated_Kd = grid_color * hit_prd.attenuation;
-			else
-				rec.attenuated_Kd = Kd * hit_prd.attenuation;
-		}
-		rec.flags = PPM_HIT;
-		if (frame_number < 1.0f)
-		{
-			rec.photon_count = 0;
-			rec.accum_atten = 0.0f;
-			rec.flux = make_float3(0.0f, 0.0f, 0.0f);
-			primary_edge_buffer[launch_index] = 0;
-			secondary_edge_buffer[launch_index] = 0;
-			rec.radius2 = rtpass_default_radius2;
-		}
-		primary_edge_buffer[launch_index] += primary_edge;
-		secondary_edge_buffer[launch_index] += secondary_edge;
-
-		rtpass_output_buffer[launch_index] = rec;
-	} else {
-		// Make reflection ray
-		hit_prd.attenuation = hit_prd.attenuation * Ks;
-		hit_prd.ray_depth++;
-		float3 R = reflect( direction, ffnormal );
-		optix::Ray refl_ray( hit_point, R, RayTypeRayTrace, scene_epsilon );
-		rtTrace( top_object, refl_ray, hit_prd );
-	}
-}
-
 //
 // Miss program
 //

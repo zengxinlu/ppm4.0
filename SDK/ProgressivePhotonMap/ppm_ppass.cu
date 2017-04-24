@@ -41,7 +41,6 @@ rtBuffer<uint2, 2>               Globalphoton_rnd_seeds;
 rtDeclareVariable(uint,          max_depth, , );
 rtDeclareVariable(uint,          max_photon_count, , );
 rtDeclareVariable(PPMLight,      light , , );
-rtDeclareVariable(PPMLight,		 light2 , , );
 
 rtDeclareVariable(uint2, launch_index, rtLaunchIndex, );
 
@@ -107,53 +106,28 @@ RT_PROGRAM void global_ppass_camera()
 
 	Globalphoton_rnd_seeds[launch_index] = seed;
 
-	if (launch_index.x & 1) {
-		if( light.is_area_light ) {
-			generateAreaLightPhoton( light, direction_sample, ray_origin, ray_direction, 0.5 );
-		} else {
-			generateSpotLightPhoton( light, direction_sample, ray_origin, ray_direction );
-		}
-
-		optix::Ray ray(ray_origin, ray_direction, RayTypeGlobalPass, scene_epsilon );
-
-		// Initialize our photons
-		for(unsigned int i = 0; i < max_photon_count; ++i) {
-			Global_Photon_Buffer[i+pm_index].energy = make_float3(0.0f);
-		}
-
-		PhotonPRD prd;
-		//  rec.ray_dir = ray_direction; // set in ppass_closest_hit
-		prd.energy = light.power;
-		prd.sample = seed;
-		prd.pm_index = pm_index;
-		prd.num_deposits = 0;
-		prd.ray_depth = 0;
-		prd.last_hitType = HITRECORD_DIFFUSE;
-		rtTrace( top_object, ray, prd );
+	if( light.is_area_light ) {
+		generateAreaLightPhoton( light, direction_sample, ray_origin, ray_direction, 0.5 );
 	} else {
-		if( light2.is_area_light ) {
-			generateAreaLightPhoton( light2, direction_sample, ray_origin, ray_direction, 0.5 );
-		} else {
-			generateSpotLightPhoton( light2, direction_sample, ray_origin, ray_direction );
-		}
-
-		optix::Ray ray(ray_origin, ray_direction, RayTypeGlobalPass, scene_epsilon );
-
-		// Initialize our photons
-		for(unsigned int i = 0; i < max_photon_count; ++i) {
-			Global_Photon_Buffer[i+pm_index].energy = make_float3(0.0f);
-		}
-
-		PhotonPRD prd;
-		//  rec.ray_dir = ray_direction; // set in ppass_closest_hit
-		prd.energy = light2.power;
-		prd.sample = seed;
-		prd.pm_index = pm_index;
-		prd.num_deposits = 0;
-		prd.ray_depth = 0;
-		prd.last_hitType = HITRECORD_DIFFUSE;
-		rtTrace( top_object, ray, prd );
+		generateSpotLightPhoton( light, direction_sample, ray_origin, ray_direction );
 	}
+
+	optix::Ray ray(ray_origin, ray_direction, RayTypeGlobalPass, scene_epsilon );
+
+	// Initialize our photons
+	for(unsigned int i = 0; i < max_photon_count; ++i) {
+		Global_Photon_Buffer[i+pm_index].energy = make_float3(0.0f);
+	}
+
+	PhotonPRD prd;
+	//  rec.ray_dir = ray_direction; // set in ppass_closest_hit
+	prd.energy = light.power;
+	prd.sample = seed;
+	prd.pm_index = pm_index;
+	prd.num_deposits = 0;
+	prd.ray_depth = 0;
+	prd.last_hitType = HITRECORD_DIFFUSE;
+	rtTrace( top_object, ray, prd );
 }
 
 //
