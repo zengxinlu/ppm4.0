@@ -276,6 +276,7 @@ public:
 	};
 private:
 	void loadScene(InitialCameraData& camera_data);
+	void setPhotonPosition2D(PhotonRecord** photon_ptrs, int photons_count);
 	void buildGlobalPhotonMap();
 	void buildCausticsPhotonMap();
 	void setFloatIn(std::vector<PhotonRecord*>& ptrVector, int ttindex, float mt_area);
@@ -809,11 +810,15 @@ void ProgressivePhotonScene::initEnterPointRayTrace(InitialCameraData& camera_da
 	m_context["rtpass_bg_color"]->setFloat( make_float3( 0.34f, 0.55f, 0.85f ) );
 
 	/// RTPass pixel sample buffers
-	Buffer image_rnd_seeds = m_context->createBuffer( RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL, RT_FORMAT_UNSIGNED_INT2, WIDTH, HEIGHT );
+	Buffer image_rnd_seeds = m_context->createBuffer( RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL, RT_FORMAT_UNSIGNED_INT3, WIDTH, HEIGHT );
 	m_context["image_rnd_seeds"]->set( image_rnd_seeds );
-	uint2* seeds = reinterpret_cast<uint2*>( image_rnd_seeds->map() );
-	for ( unsigned int i = 0; i < WIDTH*HEIGHT; ++i )  
-		seeds[i] = random2u();
+	uint3* seeds = reinterpret_cast<uint3*>( image_rnd_seeds->map() );
+	for ( unsigned int i = 0; i < WIDTH*HEIGHT; ++i ) 
+	{
+		seeds[i].x = random1u();
+		seeds[i].y = random1u();
+		seeds[i].z = 0;
+	}
 	image_rnd_seeds->unmap();
 
 	/// Set up camera
@@ -861,7 +866,7 @@ void ProgressivePhotonScene::initGeometryInstances(InitialCameraData& camera_dat
 
 void ProgressivePhotonScene::initScene( InitialCameraData& camera_data )
 {
-	cout << "Begin to init SPPM context...\n";
+	cout << "Begin to init Chip context...\n";
 
 	initGlobal();
 	initEnterPointRayTrace(camera_data);
@@ -1016,7 +1021,36 @@ void buildKDTree( PhotonRecord** photons, int start, int end, int depth, PhotonR
 
 bool cmpPhotonRecord (const PhotonRecord * a, const PhotonRecord *b)
 {
-	return a->pad.z < b->pad.z;
+	return a->triangleIndex < b->triangleIndex;
+}
+
+inline float getAngle(float2 pos)
+{
+	double al = atan2(pos.y, pos.x);
+	if (pos.y < 0) al += 2 * M_PI;
+	return al;
+}
+void ProgressivePhotonScene::setPhotonPosition2D(PhotonRecord** photon_ptrs, int photons_count)
+{
+	for (int i = 0;i < photons_count;i ++)
+	{
+		int triangleIndex = photon_ptrs[i]->triangleIndex;
+ 		PointFloat3 trianglePoints[3];
+		unsigned int *t_vindex = loader->model->triangles[triangleIndex].vindices;
+		float *apoint = &(loader->model->vertices[t_vindex[0] * 3]);
+		float *bpoint = &(loader->model->vertices[t_vindex[1] * 3]);
+		float *cpoint = &(loader->model->vertices[t_vindex[2] * 3]);
+		trianglePoints[0] = PointFloat3(apoint[0], apoint[1], apoint[2]);
+		trianglePoints[1] = PointFloat3(bpoint[0], bpoint[1], bpoint[2]);
+		trianglePoints[2] = PointFloat3(cpoint[0], cpoint[1], cpoint[2]);
+
+		PointFloat3 x_ = trianglePoints[1] - trianglePoints[0];
+		x_.normalise();
+		
+		PointFloat3 tmp = PointFloat3(photon_ptrs[i]->position.x, photon_ptrs[i]->position.y, photon_ptrs[i]->position.z);
+		float2 tmp2 = make_float2(x_.Dot(tmp - trianglePoints[0]), x_.Cross(tmp - trianglePoints[0]).Length());
+		photon_ptrs[i]->angle = getAngle(tmp2);
+	}
 }
 
 void ProgressivePhotonScene::buildGlobalPhotonMap()
@@ -1105,6 +1139,8 @@ void ProgressivePhotonScene::buildGlobalPhotonMap()
 		}
 	}	
 	
+	setPhotonPosition2D(temp_photons, valid_photons);
+
 	/// Build KD tree 
 	if (m_print_timings) std::cerr << "Starting Global kd_tree build ... " << std::endl;
 	t0 = sutil::currentTime();
@@ -1909,9 +1945,13 @@ void ProgressivePhotonScene::doResize( unsigned int width, unsigned int height )
 	}
 
 	Buffer image_rnd_seeds = m_context["image_rnd_seeds"]->getBuffer();
-	uint2* seeds = reinterpret_cast<uint2*>( image_rnd_seeds->map() );
-	for ( unsigned int i = 0; i < width*height; ++i )  
-		seeds[i] = random2u();
+	uint3* seeds = reinterpret_cast<uint3*>( image_rnd_seeds->map() );
+	for ( unsigned int i = 0; i < width*height; ++i )
+	if (seeds[i].z)
+	{
+		seeds[i].x = random1u();
+		seeds[i].y = random1u();
+	}
 	image_rnd_seeds->unmap();
 }
 

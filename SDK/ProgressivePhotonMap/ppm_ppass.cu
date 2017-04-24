@@ -173,7 +173,7 @@ RT_PROGRAM void global_ppass_closest_hit()
 			rec.ray_dir = ray.direction;
 			rec.energy = hit_record.energy * n_dot_l * Kd;
 			float tempFloat;
-			rec.pad.z = triangle_info.w;
+			rec.triangleIndex = triangle_info.w;
 			hit_record.num_deposits++;
 			if (hit_record.num_deposits >= max_photon_count)
 				return;
@@ -186,7 +186,7 @@ RT_PROGRAM void global_ppass_closest_hit()
 	else
 	{
 		while (1)
-		{	// if it is fraction ÕÛÉä
+		{	// if it is fraction ï¿½ï¿½ï¿½ï¿½
 			if (Alpha < 1)
 			{
 				float refraction_facter = 1.5;
@@ -199,14 +199,14 @@ RT_PROGRAM void global_ppass_closest_hit()
 				float bottom_emergent_t = powf(1 - top_refacter, 1/max_emergent_radian);
 				float K_refacter = 1;
 
-				// ÕÛÉä
+				// ï¿½ï¿½ï¿½ï¿½
 				if (refract(new_ray_dir, ray.direction, world_shading_normal, refraction_facter) == true)
 				{
-					// ÈëÉä½Ç
+					// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 					float incidence_sina = sqrtf( 1.0 - powf( fabsf(dot(ray.direction, world_shading_normal)), 2.0f) );
 					float incidence_radian = asinf(incidence_sina);
 
-					// ÕÛÉäÂÊ
+					// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 					if ( dot(ray.direction, world_shading_normal) < 0)
 						K_refacter = 1 - pow(bottom_incidence_t, max_incidence_radian - incidence_radian);
 					else
@@ -215,7 +215,7 @@ RT_PROGRAM void global_ppass_closest_hit()
 					hit_record.energy *= K_refacter;
 					temp_Ks = make_float3(1 - K_refacter);
 				}
-				// È«·´Éä
+				// È«ï¿½ï¿½ï¿½ï¿½
 				else
 				{
 					hit_record.energy *= 1.0f;
@@ -223,7 +223,7 @@ RT_PROGRAM void global_ppass_closest_hit()
 				}
 				break;
 			}
-			// ·´Éä
+			// ï¿½ï¿½ï¿½ï¿½
 			if (fmaxf( temp_Ks ) > 0.0f) 
 			{
 				new_ray_dir = reflect( ray.direction, ffnormal );
@@ -302,7 +302,7 @@ RT_PROGRAM void caustics_ppass_closest_hit() {
 			rec.ray_dir = ray.direction;
 			rec.energy =  Kd * n_dot_l * hit_record.energy;
 			float tempFloat;
-			rec.pad.z = triangle_info.w;
+			rec.triangleIndex = triangle_info.w;
 			hit_record.num_deposits++;
 			if (hit_record.num_deposits >= max_photon_count)
 				return;
@@ -315,7 +315,7 @@ RT_PROGRAM void caustics_ppass_closest_hit() {
 	else
 	{
 		while (1)
-		{	// if it is fraction ÕÛÉä
+		{	// if it is fraction ï¿½ï¿½ï¿½ï¿½
 			if (Alpha < 1)
 			{
 				float refraction_facter = 1.5;
@@ -328,14 +328,14 @@ RT_PROGRAM void caustics_ppass_closest_hit() {
 				float bottom_emergent_t = powf(1 - top_refacter, 1/max_emergent_radian);
 				float K_refacter = 1;
 
-				// ÕÛÉä
+				// ï¿½ï¿½ï¿½ï¿½
 				if (refract(new_ray_dir, ray.direction, world_shading_normal, refraction_facter) == true)
 				{
-					// ÈëÉä½Ç
+					// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 					float incidence_sina = sqrtf( 1.0 - powf( fabsf(dot(ray.direction, world_shading_normal)), 2.0f) );
 					float incidence_radian = asinf(incidence_sina);
 
-					// ÕÛÉäÂÊ
+					// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 					if ( dot(ray.direction, world_shading_normal) < 0)
 						K_refacter = 1 - pow(bottom_incidence_t, max_incidence_radian - incidence_radian);
 					else
@@ -344,7 +344,7 @@ RT_PROGRAM void caustics_ppass_closest_hit() {
 					hit_record.energy *= K_refacter;
 					temp_Ks = make_float3(1 - K_refacter);
 				}
-				// È«·´Éä
+				// È«ï¿½ï¿½ï¿½ï¿½
 				else
 				{
 					hit_record.energy *= 1.0f;
@@ -352,7 +352,7 @@ RT_PROGRAM void caustics_ppass_closest_hit() {
 				}
 				break;
 			}
-			// ·´Éä
+			// ï¿½ï¿½ï¿½ï¿½
 			if (fmaxf( temp_Ks ) > 0.0f) 
 			{
 				new_ray_dir = reflect( ray.direction, ffnormal );
