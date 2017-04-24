@@ -98,6 +98,7 @@ struct HitRecord
   float         photon_count;     // 
   optix::float3 flux;             //
   float         accum_atten;	  //
+  optix::uint4	p0, p1, p2, p3, p4, p5, p6, p7, p8, p9;
 };
 
 
@@ -107,6 +108,7 @@ struct PackedHitRecord
   optix::float4 b;   // normal.y,   normal.z,   atten_Kd.x, atten_Kd.y
   optix::float4 c;   // atten_Kd.z, flags,      radius2,    photon_count
   optix::float4 d;   // flux.x,     flux.y,     flux.z,     accum_atten 
+  optix::uint4	p0, p1, p2, p3, p4, p5, p6, p7, p8, p9;
 };
 
 
@@ -124,7 +126,9 @@ struct PhotonRecord
   optix::float3 ray_dir;
   optix::float3 energy;
   optix::uint   axis;
-  optix::int3 pad;			// padding,    (float)voronoi_area,    triangle index
+  float angle;
+  float area;
+  int triangleIndex;
 };
 
 
@@ -133,7 +137,7 @@ struct PackedPhotonRecord
   optix::float4 a;   // position.x, position.y, position.z, normal.x
   optix::float4 b;   // normal.y,   normal.z,   ray_dir.x,  ray_dir.y
   optix::float4 c;   // ray_dir.z,  energy.x,   energy.y,   energy.z
-  optix::float4 d;   // axis,       padding,    padding,    padding
+  optix::float4 d;   // axis,       angle,    area,    triangleIndex
 };
 
 
@@ -153,34 +157,3 @@ struct ShadowPRD
 {
   float attenuation;
 };
-
-//struct Vec3 { 
-//	double x, y, z; /* etc - make sure you have overloaded operator== */ 
-//	bool operator == (const Vec3 &a) const {
-//		return a.x == x && a.y == y && a.z == z; 
-//	}
-//};
-//
-//namespace YAML {
-//	template<>
-//	struct convert<Vec3> {
-//		static Node encode(const Vec3& rhs) {
-//			Node node;
-//			node.push_back(rhs.x);
-//			node.push_back(rhs.y);
-//			node.push_back(rhs.z);
-//			return node;
-//		}
-//
-//		static bool decode(const Node& node, Vec3& rhs) {
-//			if (!node.IsSequence() || node.size() != 3) {
-//				return false;
-//			}
-//
-//			rhs.x = node[0].as<double>();
-//			rhs.y = node[1].as<double>();
-//			rhs.z = node[2].as<double>();
-//			return true;
-//		}
-//	};
-//}
