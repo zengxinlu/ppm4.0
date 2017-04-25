@@ -186,7 +186,7 @@ void getArea(float2 r_center, float r_radius, float2 t1, float2 t2, float2 t3, f
 static char* TestSceneNames[] = {
 	"Cornel_Box_Scene",
 	"Wedding_Ring_Scene",
-	"Mesh_Room_Scene",
+	"Small_Room_Scene",
 	"Conference_Scene",
 	"Clock_Scene",
 	"Sponza_Scene",
@@ -203,7 +203,7 @@ public:
 		, m_frame_number( 0 )
 		, m_display_debug_buffer( false )
 		, m_print_timings ( false )
-		, m_test_scene(Box_Scene)
+		, m_test_scene( Box_Scene )
 		, m_light_phi( 2.19f )
 		, m_light_theta( 1.15f )
 		, m_split_choice(LongestDim)
@@ -240,8 +240,6 @@ public:
 
 	void setTestScene(int testScene) { 
 		m_test_scene = testScene; 
-		if (m_test_scene == Cornel_Box_Scene)
-			m_gather_method = Cornel_Box_Method;
 	}
 	void setGatherMethod(int gatherMethod) { m_gather_method = gatherMethod; }
 	void printTimings()       { m_print_timings = true; }
@@ -826,8 +824,6 @@ void ProgressivePhotonScene::initEnterPointGlobalGather() {
 	/// Gather phase
 	std::string gather_ptx_path = ptxpath( projectName, cuda_gather_cu );
 	std::string gather_program_name = "globalDensity";
-	if (m_test_scene == Cornel_Box_Scene)
-		gather_program_name = gather_program_name.append("_cornel");
 	Program gather_program = m_context->createProgramFromPTXFile( gather_ptx_path, gather_program_name );
 	m_context->setRayGenerationProgram( EnterPointGlobalGather, gather_program );
 	Program exception_program = m_context->createProgramFromPTXFile( gather_ptx_path, "gather_exception" );
@@ -837,8 +833,6 @@ void ProgressivePhotonScene::initEnterPointCausticsGather() {
 	/// Gather phase
 	std::string gather_ptx_path = ptxpath( projectName, cuda_gather_cu );
 	std::string gather_program_name = "causticsDensity";
-	if (m_test_scene == Cornel_Box_Scene)
-		gather_program_name = gather_program_name.append("_cornel");
 	Program gather_program = m_context->createProgramFromPTXFile( gather_ptx_path, gather_program_name );
 	m_context->setRayGenerationProgram( EnterPointCausticsGather, gather_program );
 	Program exception_program = m_context->createProgramFromPTXFile( gather_ptx_path, "gather_exception" );
