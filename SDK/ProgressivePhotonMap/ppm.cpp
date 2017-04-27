@@ -270,7 +270,6 @@ private:
 	void buildCausticsPhotonMap();
 	void setFloatIn(std::vector<PhotonRecord*>& ptrVector, int ttindex, float mt_area);
 	void loadObjGeometry( const std::string& filename, optix::Aabb& bbox, bool isUnitize);
-	void createCornellBoxGeometry();
 	GeometryInstance createParallelogram( const float3& anchor,
 		const float3& offset1,
 		const float3& offset2,
@@ -1967,125 +1966,6 @@ void ProgressivePhotonScene::loadObjGeometry( const std::string& filename, optix
 	m_context["top_shadower"]->set( geometry_group );
 }
 
-void ProgressivePhotonScene::createCornellBoxGeometry()
-{
-	/// Set up material
-	m_material = m_context->createMaterial();
-	m_material->setClosestHitProgram( RayTypeRayTrace, m_context->createProgramFromPTXFile( ptxpath( "progressivePhotonMap", "ppm_rtpass.cu"),
-		"rtpass_closest_hit_cornel") );
-	m_material->setClosestHitProgram( RayTypeGlobalPass,  m_context->createProgramFromPTXFile( ptxpath( "progressivePhotonMap", "ppm_ppass.cu"),
-		"global_ppass_closest_hit") );
-	m_material->setAnyHitProgram(     RayTypeShadowRay,  m_context->createProgramFromPTXFile( ptxpath( "progressivePhotonMap", "ppm_gather.cu"),
-		"gather_any_hit") );
-
-
-	std::string ptx_path = ptxpath( "progressivePhotonMap", "parallelogram.cu" );
-	m_pgram_bounding_box = m_context->createProgramFromPTXFile( ptx_path, "bounds" );
-	m_pgram_intersection = m_context->createProgramFromPTXFile( ptx_path, "intersect" );
-
-
-	/// create geometry instances
-	std::vector<GeometryInstance> gis;
-
-	const float3 white = make_float3( 0.8f, 0.8f, 0.8f );
-	const float3 green = make_float3( 0.05f, 0.8f, 0.05f );
-	const float3 red   = make_float3( 0.8f, 0.05f, 0.05f );
-	const float3 black = make_float3( 0.0f, 0.0f, 0.0f );
-	const float3 light = make_float3( 15.0f, 15.0f, 5.0f );
-
-	/// Floor
-	gis.push_back( createParallelogram( make_float3( 0.0f, 0.0f, 0.0f ),
-		make_float3( 0.0f, 0.0f, 559.2f ),
-		make_float3( 556.0f, 0.0f, 0.0f ),
-		white ) );
-
-	/// Ceiling
-	gis.push_back( createParallelogram( make_float3( 0.0f, 548.8f, 0.0f ),
-		make_float3( 556.0f, 0.0f, 0.0f ),
-		make_float3( 0.0f, 0.0f, 559.2f ),
-		white ) );
-
-	/// Back wall
-	gis.push_back( createParallelogram( make_float3( 0.0f, 0.0f, 559.2f),
-		make_float3( 0.0f, 548.8f, 0.0f),
-		make_float3( 556.0f, 0.0f, 0.0f),
-		white ) );
-
-	/// Right wall
-	gis.push_back( createParallelogram( make_float3( 0.0f, 0.0f, 0.0f ),
-		make_float3( 0.0f, 548.8f, 0.0f ),
-		make_float3( 0.0f, 0.0f, 559.2f ),
-		green ) );
-
-	/// Left wall
-	gis.push_back( createParallelogram( make_float3( 556.0f, 0.0f, 0.0f ),
-		make_float3( 0.0f, 0.0f, 559.2f ),
-		make_float3( 0.0f, 548.8f, 0.0f ),
-		red ) );
-
-	/// Short block
-	gis.push_back( createParallelogram( make_float3( 130.0f, 165.0f, 65.0f),
-		make_float3( -48.0f, 0.0f, 160.0f),
-		make_float3( 160.0f, 0.0f, 49.0f),
-		white ) );
-	gis.push_back( createParallelogram( make_float3( 290.0f, 0.0f, 114.0f),
-		make_float3( 0.0f, 165.0f, 0.0f),
-		make_float3( -50.0f, 0.0f, 158.0f),
-		white ) );
-	gis.push_back( createParallelogram( make_float3( 130.0f, 0.0f, 65.0f),
-		make_float3( 0.0f, 165.0f, 0.0f),
-		make_float3( 160.0f, 0.0f, 49.0f),
-		white ) );
-	gis.push_back( createParallelogram( make_float3( 82.0f, 0.0f, 225.0f),
-		make_float3( 0.0f, 165.0f, 0.0f),
-		make_float3( 48.0f, 0.0f, -160.0f),
-		white ) );
-	gis.push_back( createParallelogram( make_float3( 240.0f, 0.0f, 272.0f),
-		make_float3( 0.0f, 165.0f, 0.0f),
-		make_float3( -158.0f, 0.0f, -47.0f),
-		white ) );
-
-	/// Tall block
-	gis.push_back( createParallelogram( make_float3( 423.0f, 330.0f, 247.0f),
-		make_float3( -158.0f, 0.0f, 49.0f),
-		make_float3( 49.0f, 0.0f, 159.0f),
-		white ) );
-	gis.push_back( createParallelogram( make_float3( 423.0f, 0.0f, 247.0f),
-		make_float3( 0.0f, 330.0f, 0.0f),
-		make_float3( 49.0f, 0.0f, 159.0f),
-		white ) );
-	gis.push_back( createParallelogram( make_float3( 472.0f, 0.0f, 406.0f),
-		make_float3( 0.0f, 330.0f, 0.0f),
-		make_float3( -158.0f, 0.0f, 50.0f),
-		white ) );
-	gis.push_back( createParallelogram( make_float3( 314.0f, 0.0f, 456.0f),
-		make_float3( 0.0f, 330.0f, 0.0f),
-		make_float3( -49.0f, 0.0f, -160.0f),
-		white ) );
-	gis.push_back( createParallelogram( make_float3( 265.0f, 0.0f, 296.0f),
-		make_float3( 0.0f, 330.0f, 0.0f),
-		make_float3( 158.0f, 0.0f, -49.0f),
-		white ) );
-
-	/// Light
-	gis.push_back( createParallelogram( make_float3( 343.0f, 548.7f, 227.0f),
-		make_float3( 0.0f, 0.0f, 105.0f),
-		make_float3( -130.0f, 0.0f, 0.0f),
-		black) );
-	gis.back()["emitted"]->setFloat( light );
-
-
-	/// Create geometry group
-	GeometryGroup geometry_group = m_context->createGeometryGroup();
-	geometry_group->setChildCount( static_cast<unsigned int>( gis.size() ) );
-	for ( unsigned int i = 0; i < gis.size(); ++i )
-		geometry_group->setChild( i, gis[i] );
-	geometry_group->setAcceleration( m_context->createAcceleration("Bvh","Bvh") );
-
-	m_context["top_object"]->set( geometry_group );
-	m_context["top_shadower"]->set( geometry_group );
-}
-
 void printUsageAndExit( const std::string& argv0, bool doExit = true )
 {
 	std::cerr
@@ -2145,7 +2025,6 @@ int main( int argc, char** argv )
 		}
 	}
 
-	if (timeout < 0.0) timeout = 3600;
 	try {
 		ProgressivePhotonScene scene;
 		if (print_timings) scene.printTimings();

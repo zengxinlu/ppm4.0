@@ -95,7 +95,7 @@ bool           GLUTDisplay::m_use_sRGB             = false;
 bool           GLUTDisplay::m_initialized          = false;
 bool           GLUTDisplay::m_benchmark_no_display = false;
 unsigned int   GLUTDisplay::m_warmup_frames        = 50u;//50u;
-unsigned int   GLUTDisplay::m_timed_frames         = 10101u;//30u;
+unsigned int   GLUTDisplay::m_timed_frames         = 10100u;//30u;
 double         GLUTDisplay::m_warmup_start         = 0;
 double         GLUTDisplay::m_warmup_time          = 10.0;
 double         GLUTDisplay::m_benchmark_time       = 10.0;
@@ -317,7 +317,7 @@ void GLUTDisplay::setContinuousMode(contDraw_E continuous_mode)
 	// Unless the user has overridden it, progressive implies a finite continuous drawing timeout.
 	if(m_app_continuous_mode == CDProgressive && m_progressive_timeout < 0.0) {
 		//m_progressive_timeout = 10.0;
-		m_progressive_timeout = 10000.0;
+		m_progressive_timeout = 100000000.0;
 	}
 
 	setCurContinuousMode(m_app_continuous_mode);
