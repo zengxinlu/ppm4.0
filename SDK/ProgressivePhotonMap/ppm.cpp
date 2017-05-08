@@ -1069,15 +1069,13 @@ void ProgressivePhotonScene::buildGlobalPhotonMap()
 		photons_data = reinterpret_cast<PhotonRecord*>(m_Global_Photon_Buffer->map());
 		char name[256];
 		sprintf(name, "%s/%s/%s/%s/%d.txt", sutil::samplesDir(), "../../test", "photonMap", m_model.c_str(), m_frame_number);
-		freopen(name, "r", stdin);
 		printf("%s\n", name);
-		scanf("%d\n", &valid_photons);
+		FILE * fin = fopen(name, "rb");
+		fread(&valid_photons, 1, sizeof(unsigned int), fin);
+		fread(photons_data, valid_photons, sizeof(PhotonRecord), fin);
 		for (int i = 0; i < valid_photons; ++i) {
-			scanf("%f %f %f\n", &photons_data[i].position.x, &photons_data[i].position.y, &photons_data[i].position.z);
-			scanf("%f %f %f\n", &photons_data[i].normal.x, &photons_data[i].normal.y, &photons_data[i].normal.z);
-			scanf("%f %f %f\n", &photons_data[i].ray_dir.x, &photons_data[i].ray_dir.y, &photons_data[i].ray_dir.z);
-			scanf("%f %f %f\n", &photons_data[i].energy.x, &photons_data[i].energy.y, &photons_data[i].energy.z);
 			temp_photons[i] = &photons_data[i];
+			//photonPrint(photons_data[i]);
 		}
 		fclose(stdin);
 	}
@@ -2019,28 +2017,29 @@ void ProgressivePhotonScene::collectionPhotons(std::string objname, int frameNum
 		m_context->launch(EnterPointGlobalPass,
 			static_cast<unsigned int>(PHOTON_LAUNCH_WIDTH),
 			static_cast<unsigned int>(PHOTON_LAUNCH_HEIGHT));
+
 		PhotonRecord* photons_data = reinterpret_cast<PhotonRecord*>(m_Global_Photon_Buffer->map());
 
 		unsigned int valid_photons = 0;
-		PhotonRecord** temp_photons = new PhotonRecord*[NUM_PHOTONS];
+		PhotonRecord* temp_photons = new PhotonRecord[NUM_PHOTONS]; 
 		for (unsigned int i = 0; i < NUM_PHOTONS; ++i) {
 			if (fmaxf(photons_data[i].energy) > 0.0f) {
-				temp_photons[valid_photons++] = &photons_data[i];
+				temp_photons[valid_photons++] = photons_data[i];
 			}
 		}
 		std::cerr << " ** valid_photon/NUM_PHOTONS =  "
 			<< valid_photons << "/" << NUM_PHOTONS
 			<< " (" << valid_photons / static_cast<float>(NUM_PHOTONS) << ")\n";
 
-
 		char name[256];
-		sprintf(name, "%s/%s/%s/%s/%d.txt", sutil::samplesDir(), "progressivePhotonMap", "photonMap", objname, fi);
-		freopen(name, "w", stdout);
-		printf("%d\n", valid_photons);
-		for (int i = 0; i < valid_photons; ++i) {
-			photonPrint(*temp_photons[i]);
-		}
-		fclose(stdout);
+		sprintf(name, "%s/%s/%s/%s/%d.txt", sutil::samplesDir(), "progressivePhotonMap", "photonMap", objname.c_str(), fi);
+		printf("%s\n", name);
+		FILE * fout = fopen(name, "wb");
+		size_t a = fwrite(&valid_photons, sizeof(unsigned int), 1, fout);
+		size_t b = fwrite(temp_photons, sizeof(PhotonRecord), valid_photons,  fout);
+		//printf("%d %d\n", a, b);
+		fclose(fout);
+		
 		delete[] temp_photons;
 		m_Global_Photon_Buffer->unmap();
 	}
@@ -2114,7 +2113,7 @@ int main( int argc, char** argv )
 		scene.selectScene(model, modelNum);
 
 		scene.useCollectionPhotons = true;
-	//	scene.m_collect_photon = true;
+		//scene.m_collect_photon = true;
 
 		scene.setGatherMethod(ProgressivePhotonScene::Triangle_Inside_Method);
 		GLUTDisplay::setProgressiveDrawingTimeout(timeout);
