@@ -199,6 +199,7 @@ class ProgressivePhotonScene : public SampleScene
 {
 public:
 	std::string m_model_file;
+	std::string m_model;
 	ProgressivePhotonScene() : SampleScene()
 		, m_frame_number( 0 )
 		, m_display_debug_buffer( false )
@@ -220,6 +221,7 @@ public:
 		if (model == "smallroom")		setTestScene(ProgressivePhotonScene::Small_Room_Scene);
 		if (model == "clocks")			setTestScene(ProgressivePhotonScene::Clock_Scene);
 		if (model == "echess")			setTestScene(ProgressivePhotonScene::EChess_Scene);
+		m_model = model;
 		m_model_file = std::string(sutil::samplesDir()) + "/progressivePhotonMap/scenes/" + model + "/" + model + modelNum + ".yaml";
 	}	
 
@@ -244,6 +246,10 @@ public:
 	void setGatherMethod(int gatherMethod) { m_gather_method = gatherMethod; }
 	void printTimings()       { m_print_timings = true; }
 	void displayDebugBuffer() { m_display_debug_buffer = true; }
+
+	void collectionPhotons(std::string filename, int frameNum);
+	bool useCollectionPhotons = false;
+	bool m_collect_photon = false;
 
 	enum GatherMethod{
 		Cornel_Box_Method,
@@ -406,6 +412,13 @@ void ProgressivePhotonScene::printFile(float3 t1, float3 t2)
 void mprintf(float3 &tempfloat3)
 {
 	std::cerr<< tempfloat3.x << ", " << tempfloat3.y << ", " << tempfloat3.z;
+} 
+
+void photonPrint(PhotonRecord p) {
+	printf("%.6f %.6f %.6f\n", p.position.x, p.position.y, p.position.z);
+	printf("%.6f %.6f %.6f\n", p.normal.x, p.normal.y, p.normal.z);
+	printf("%.6f %.6f %.6f\n", p.ray_dir.x, p.ray_dir.y, p.ray_dir.z);
+	printf("%.6f %.6f %.6f\n", p.energy.x, p.energy.y, p.energy.z);
 }
 
 void updateLight(PPMLight &light, float3 dis_float3)
@@ -868,6 +881,9 @@ void ProgressivePhotonScene::initScene( InitialCameraData& camera_data )
 	m_context->compile();
 
 	cout << "Context init finished\n" ;
+
+	if (m_collect_photon)
+		collectionPhotons(m_model, 100);
 }
 
 Buffer ProgressivePhotonScene::getOutputBuffer()
@@ -1041,50 +1057,73 @@ void ProgressivePhotonScene::buildGlobalPhotonMap()
 {
 	double t0, t1;
 
-	if (m_print_timings) std::cerr << "Starting Global photon pass   ... ";
-
-	Buffer Globalphoton_rnd_seeds = m_context["Globalphoton_rnd_seeds"]->getBuffer();
-	uint2* seeds = reinterpret_cast<uint2*>( Globalphoton_rnd_seeds->map() );
-	for ( unsigned int i = 0; i < PHOTON_LAUNCH_WIDTH*PHOTON_LAUNCH_HEIGHT; ++i )
-		seeds[i] = random2u();
-	Globalphoton_rnd_seeds->unmap();
-
-	t0 = sutil::currentTime();
-	
-	m_context->launch( EnterPointGlobalPass,
-		static_cast<unsigned int>(PHOTON_LAUNCH_WIDTH),
-		static_cast<unsigned int>(PHOTON_LAUNCH_HEIGHT) );
-
-	/// By computing the total number of photons as an unsigned long long we avoid 32 bit
-	/// floating point addition errors when the number of photons gets sufficiently large
-	/// (the error of adding two floating point numbers when the mantissa bits no longer
-	/// overlap).
-	m_context["total_emitted"]->setFloat( static_cast<float>((unsigned long long)(m_frame_number+1)*PHOTON_LAUNCH_WIDTH*PHOTON_LAUNCH_HEIGHT) );
-	
-	t1 = sutil::currentTime();
-	if (m_print_timings) std::cerr << "finished. " << t1 - t0 << std::endl;
-
-
-	PhotonRecord* photons_data    = reinterpret_cast<PhotonRecord*>( m_Global_Photon_Buffer->map() );
-	PhotonRecord* photon_map_data = reinterpret_cast<PhotonRecord*>( m_Global_Photon_Map->map() );
-
-	for( unsigned int i = 0; i < Global_Photon_Map_Size; ++i ) {
-		photon_map_data[i].energy = make_float3( 0.0f );
-	}
-
-	/// Push all valid photons to front of list
 	unsigned int valid_photons = 0;
 	PhotonRecord** temp_photons = new PhotonRecord*[NUM_PHOTONS];
-	for( unsigned int i = 0; i < NUM_PHOTONS; ++i ) {
-		if( fmaxf( photons_data[i].energy ) > 0.0f ) {
-			temp_photons[valid_photons++] = &photons_data[i];
+
+	PhotonRecord* photons_data;
+
+	if (!useCollectionPhotons) {
+
+		if (m_print_timings) std::cerr << "Starting Global photon pass   ... ";
+
+		Buffer Globalphoton_rnd_seeds = m_context["Globalphoton_rnd_seeds"]->getBuffer();
+		uint2* seeds = reinterpret_cast<uint2*>( Globalphoton_rnd_seeds->map() );
+		for ( unsigned int i = 0; i < PHOTON_LAUNCH_WIDTH*PHOTON_LAUNCH_HEIGHT; ++i )
+			seeds[i] = random2u();
+		Globalphoton_rnd_seeds->unmap();
+
+		t0 = sutil::currentTime();
+	
+		m_context->launch( EnterPointGlobalPass,
+			static_cast<unsigned int>(PHOTON_LAUNCH_WIDTH),
+			static_cast<unsigned int>(PHOTON_LAUNCH_HEIGHT) );
+
+		/// By computing the total number of photons as an unsigned long long we avoid 32 bit
+		/// floating point addition errors when the number of photons gets sufficiently large
+		/// (the error of adding two floating point numbers when the mantissa bits no longer
+		/// overlap).
+		photons_data = reinterpret_cast<PhotonRecord*>(m_Global_Photon_Buffer->map());
+
+		t1 = sutil::currentTime();
+		if (m_print_timings) std::cerr << "finished. " << t1 - t0 << std::endl;
+
+		/// Push all valid photons to front of list
+		for( unsigned int i = 0; i < NUM_PHOTONS; ++i ) {
+			if( fmaxf( photons_data[i].energy ) > 0.0f ) {
+				temp_photons[valid_photons++] = &photons_data[i];
+			}
 		}
+		if ( m_display_debug_buffer ) {
+			std::cerr << " ** valid_photon/NUM_PHOTONS =  " 
+				<< valid_photons<<"/"<<NUM_PHOTONS
+				<<" ("<<valid_photons/static_cast<float>(NUM_PHOTONS)<<")\n";
+		}
+
+	} else {
+		photons_data = reinterpret_cast<PhotonRecord*>(m_Global_Photon_Buffer->map());
+		char name[256];
+		sprintf(name, "%s/%s/%s/%s/%d.txt", sutil::samplesDir(), "../../test", "photonMap", m_model.c_str(), m_frame_number);
+		freopen(name, "r", stdin);
+		printf("%s\n", name);
+		scanf("%d\n", &valid_photons);
+		for (int i = 0; i < valid_photons; ++i) {
+			scanf("%f %f %f\n", &photons_data[i].position.x, &photons_data[i].position.y, &photons_data[i].position.z);
+			scanf("%f %f %f\n", &photons_data[i].normal.x, &photons_data[i].normal.y, &photons_data[i].normal.z);
+			scanf("%f %f %f\n", &photons_data[i].ray_dir.x, &photons_data[i].ray_dir.y, &photons_data[i].ray_dir.z);
+			scanf("%f %f %f\n", &photons_data[i].energy.x, &photons_data[i].energy.y, &photons_data[i].energy.z);
+			temp_photons[i] = &photons_data[i];
+		}
+		fclose(stdin);
 	}
-	if ( m_display_debug_buffer ) {
-		std::cerr << " ** valid_photon/NUM_PHOTONS =  " 
-			<< valid_photons<<"/"<<NUM_PHOTONS
-			<<" ("<<valid_photons/static_cast<float>(NUM_PHOTONS)<<")\n";
+
+	PhotonRecord* photon_map_data = reinterpret_cast<PhotonRecord*>(m_Global_Photon_Map->map());;
+
+	m_context["total_emitted"]->setFloat(static_cast<float>((unsigned long long)(m_frame_number + 1)*PHOTON_LAUNCH_WIDTH*PHOTON_LAUNCH_HEIGHT));
+
+	for (unsigned int i = 0; i < Global_Photon_Map_Size; ++i) {
+		photon_map_data[i].energy = make_float3(0.0f);
 	}
+
 
 	/// Make sure we arent at most 1 less than power of 2
 	valid_photons = valid_photons >= Global_Photon_Map_Size ? Global_Photon_Map_Size : valid_photons;
@@ -1749,7 +1788,7 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 	RTsize buffer_width, buffer_height;
 	output_buffer->getSize( buffer_width, buffer_height );
 
-	if ((m_frame_number % 100 == 0 || m_frame_number <= 50) && m_frame_number > 0)
+	if ((m_frame_number % 100 == 0 || m_frame_number <= 100) && m_frame_number > 0)
 		m_print_image = 1;
 
 	/// Print Images
@@ -2006,6 +2045,49 @@ void ProgressivePhotonScene::loadObjGeometry( const std::string& filename, optix
 	m_context["top_shadower"]->set( geometry_group );
 }
 
+
+void ProgressivePhotonScene::collectionPhotons(std::string objname, int frameNums) {
+	double t0, t1;
+	t0 = sutil::currentTime();
+	for (int fi = 0; fi < frameNums; ++fi) {
+		Buffer Globalphoton_rnd_seeds = m_context["Globalphoton_rnd_seeds"]->getBuffer();
+		uint2* seeds = reinterpret_cast<uint2*>(Globalphoton_rnd_seeds->map());
+		for (unsigned int i = 0; i < PHOTON_LAUNCH_WIDTH*PHOTON_LAUNCH_HEIGHT; ++i)
+			seeds[i] = random2u();
+		Globalphoton_rnd_seeds->unmap();
+
+		m_context->launch(EnterPointGlobalPass,
+			static_cast<unsigned int>(PHOTON_LAUNCH_WIDTH),
+			static_cast<unsigned int>(PHOTON_LAUNCH_HEIGHT));
+		PhotonRecord* photons_data = reinterpret_cast<PhotonRecord*>(m_Global_Photon_Buffer->map());
+
+		unsigned int valid_photons = 0;
+		PhotonRecord** temp_photons = new PhotonRecord*[NUM_PHOTONS];
+		for (unsigned int i = 0; i < NUM_PHOTONS; ++i) {
+			if (fmaxf(photons_data[i].energy) > 0.0f) {
+				temp_photons[valid_photons++] = &photons_data[i];
+			}
+		}
+		std::cerr << " ** valid_photon/NUM_PHOTONS =  "
+			<< valid_photons << "/" << NUM_PHOTONS
+			<< " (" << valid_photons / static_cast<float>(NUM_PHOTONS) << ")\n";
+
+
+		char name[256];
+		sprintf(name, "%s/%s/%s/%s/%d.txt", sutil::samplesDir(), "progressivePhotonMap", "photonMap", objname, fi);
+		freopen(name, "w", stdout);
+		printf("%d\n", valid_photons);
+		for (int i = 0; i < valid_photons; ++i) {
+			photonPrint(*temp_photons[i]);
+		}
+		fclose(stdout);
+		delete[] temp_photons;
+		m_Global_Photon_Buffer->unmap();
+	}
+	t1 = sutil::currentTime();
+	if (m_print_timings) std::cerr << "finished. " << t1 - t0 << std::endl;
+}
+
 void printUsageAndExit( const std::string& argv0, bool doExit = true )
 {
 	std::cerr
@@ -2070,6 +2152,9 @@ int main( int argc, char** argv )
 		if (print_timings) scene.printTimings();
 		if (display_debug_buffer) scene.displayDebugBuffer();
 		scene.selectScene(model, modelNum);
+
+		scene.useCollectionPhotons = true;
+	//	scene.m_collect_photon = true;
 
 		scene.setGatherMethod(ProgressivePhotonScene::Triangle_Inside_Method);
 		GLUTDisplay::setProgressiveDrawingTimeout(timeout);
