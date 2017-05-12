@@ -5,9 +5,9 @@ camera_data:
   vfov: 30.0
 light_data:
   is_area_light: 1
-  anchor: [0.245302, 0.117013, -0.196241]
-  direction: [-0.469841, -0.79873, 0.375873]
+  target: [0.0, -0.3, 0.0]
   position: [0.25, 0.125, -0.2]
+  direction: null
   v1: 0.01
   v2: 0.01
   radius: 0.03490658504

@@ -26,7 +26,7 @@ using namespace optix;
 #include "gpc.h"
 #include "jfv_gpu.h"
 
-static const float3 m_light_target = make_float3(0, -0.3, 0);
+static const float3 m_light_target = make_float3(0, 0, 0);
 
 class Matrix4X4
 {
@@ -193,7 +193,8 @@ static char* TestSceneNames[] = {
 	"Box_Scene",
 	"Sibenik_Scene",
 	"Torus_Scene",
-	"EChess_Scene"
+	"EChess_Scene",
+	"Diamond_Scene"
 };
 class ProgressivePhotonScene : public SampleScene
 {
@@ -213,7 +214,7 @@ public:
 	{
 		if (model == "box")				setTestScene(ProgressivePhotonScene::Box_Scene);
 		if (model == "torus")			setTestScene(ProgressivePhotonScene::Torus_Scene);
-		if (model == "cornel_box") 		setTestScene(ProgressivePhotonScene::Cornel_Box_Scene);
+		if (model == "cornellbox") 		setTestScene(ProgressivePhotonScene::Cornel_Box_Scene);
 		if (model == "sibenik")			setTestScene(ProgressivePhotonScene::Sibenik_Scene);
 		if (model == "wedding_ring") 	setTestScene(ProgressivePhotonScene::Wedding_Ring_Scene);
 		if (model == "conference")		setTestScene(ProgressivePhotonScene::Conference_Scene);
@@ -221,6 +222,7 @@ public:
 		if (model == "smallroom")		setTestScene(ProgressivePhotonScene::Small_Room_Scene);
 		if (model == "clocks")			setTestScene(ProgressivePhotonScene::Clock_Scene);
 		if (model == "echess")			setTestScene(ProgressivePhotonScene::EChess_Scene);
+		if (model == "diamond")			setTestScene(ProgressivePhotonScene::Diamond_Scene);
 		m_model = model;
 		m_model_file = std::string(sutil::samplesDir()) + "/progressivePhotonMap/scenes/" + model + "/" + model + modelNum + ".yaml";
 	}	
@@ -270,6 +272,7 @@ public:
 		Sibenik_Scene,
 		Torus_Scene,
 		EChess_Scene,
+		Diamond_Scene,
 	};
 private:
 	void loadScene(InitialCameraData& camera_data);
@@ -600,28 +603,22 @@ void ProgressivePhotonScene::loadScene(InitialCameraData& camera_data) {
 
 	YAML::Node lightData = modelConfig["light_data"];
 	m_light.is_area_light = lightData["is_area_light"].as<int>(); 
-	if (lightData["position"].IsNull()) {
-		vector<double> anchor = lightData["anchor"].as<vector<double> >();
-		vector<double> direction = lightData["direction"].as<vector<double> >();
-		m_light.anchor = make_float3(anchor[0], anchor[1], anchor[2]);
-		m_light.direction = make_float3(direction[0], direction[1], direction[2]);
-		m_light.position = m_light.anchor - m_light.direction * 0.00001f;
-	} else
 	if (lightData["direction"].IsNull()) {
-		vector<double> anchor = lightData["anchor"].as<vector<double> >();
+		vector<double> target = lightData["target"].as<vector<double> >();
 		vector<double> position = lightData["position"].as<vector<double> >();
-		m_light.anchor = make_float3(anchor[0], anchor[1], anchor[2]);
+		float3 tmpTarget = make_float3(target[0], target[1], target[2]);
 		m_light.position = make_float3(position[0], position[1], position[2]);
-		m_light.direction = normalize(m_light.anchor - m_light.position);
+		m_light.direction = normalize(tmpTarget - m_light.position);
+		mprintf(m_light.direction);
 	} else {
-		vector<double> anchor = lightData["anchor"].as<vector<double> >();
 		vector<double> position = lightData["position"].as<vector<double> >();
 		vector<double> direction = lightData["direction"].as<vector<double> >();
-		m_light.anchor = make_float3(anchor[0], anchor[1], anchor[2]);
 		m_light.position = make_float3(position[0], position[1], position[2]);
 		m_light.direction = make_float3(direction[0], direction[1], direction[2]);
 	}
 	if (m_light.is_area_light) {
+		m_light.anchor = m_light.position + m_light.direction * 0.01;
+		mprintf(m_light.anchor);
 		m_light.v1 = make_float3(1.0f, 0.f, 0.0f) * lightData["v1"].as<double>();
 		m_light.v2 = make_float3(0.0f, 0.f, 1.0f) * lightData["v2"].as<double>();
 		float3 m_light_t_normal;
@@ -2119,7 +2116,7 @@ int main( int argc, char** argv )
 		if (display_debug_buffer) scene.displayDebugBuffer();
 		scene.selectScene(model, modelNum);
 
-		scene.useCollectionPhotons = true;
+		//scene.useCollectionPhotons = true;
 		//scene.m_collect_photon = true;
 		//scene.collectPhotonsFrame = 10100;
 

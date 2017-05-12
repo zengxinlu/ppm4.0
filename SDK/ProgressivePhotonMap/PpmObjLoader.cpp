@@ -181,7 +181,6 @@ void PpmObjLoader::load(int Myron_PPM, int Neighbor_2)
 		ss << "PpmObjLoader::loadImpl - glmReadOBJ( '" << m_filename << "' ) failed" << std::endl;
 		throw Exception( ss.str() );
 	}
-
 	if (Myron_PPM)
 	{
 		double t0, t1, s_myron, e_myron;
@@ -467,6 +466,12 @@ int PpmObjLoader::loadMaterialParams( GeometryInstance gi, unsigned int index )
 		gi[ "grid_color"  ]->setFloat( 0.5f, 0.5f, 0.5f );
 		gi[ "use_grid"  ]->setUint( mp.name == "01_-_Default" ? 1u : 0 );
 
+
+		//printf("%.6f %.6f %.6f\n", mp.Kd.x, mp.Kd.y, mp.Kd.z);
+		//printf("%.6f %.6f %.6f\n", mp.Ks.x, mp.Ks.y, mp.Ks.z);
+		//printf("%s\n", mp.name);
+		//printf("%.6f\n", mp.alpha);
+
 		// Need to be un surface
 		if (mp.Ka.x > 0.f && fabs(mp.Ka.y) < 0.0001f && fabs(mp.Ka.z) < 0.0001f)
 			return 1;
@@ -511,6 +516,8 @@ void PpmObjLoader::createMaterialParams( GLMmodel* model )
 		params.Kf = mat.refraction;
 		params.name = mat.name;
 		params.alpha = mat.alpha;
+
+//		printf("%.6f\n", mat.alpha);
 
 		// load textures relatively to OBJ main file
 		std::string ambient_map  = strlen(mat.ambient_map)  ? m_pathname + mat.ambient_map  : "";
