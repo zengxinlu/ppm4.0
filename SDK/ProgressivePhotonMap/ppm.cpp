@@ -252,7 +252,7 @@ public:
 	void collectionPhotons(std::string filename, int frameNum);
 	bool useCollectionPhotons = false;
 	bool m_collect_photon = false;
-	int  collectPhotonsFrame = 0;
+	int  collectPhotonsFrame = 1000;
 
 	enum GatherMethod{
 		Cornel_Box_Method,
@@ -2116,9 +2116,9 @@ int main( int argc, char** argv )
 		if (display_debug_buffer) scene.displayDebugBuffer();
 		scene.selectScene(model, modelNum);
 
-		//scene.useCollectionPhotons = true;
+		scene.useCollectionPhotons = true;
 		//scene.m_collect_photon = true;
-		//scene.collectPhotonsFrame = 10100;
+		//scene.collectPhotonsFrame = 1010;
 
 		scene.setGatherMethod(ProgressivePhotonScene::Triangle_Inside_Method);
 		GLUTDisplay::setProgressiveDrawingTimeout(timeout);

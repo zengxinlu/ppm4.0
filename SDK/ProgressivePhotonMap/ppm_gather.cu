@@ -268,7 +268,7 @@ RT_PROGRAM void globalDensity()
 	} while ( node );
 
 	// new alpha by mengyang
-	float default_alpha = 0.7f, min_radius2 = 100.0f;
+	float default_alpha = 0.66666f, min_radius2 = 100.0f;
 	float m_alpha = default_alpha;
 
 // 	if (myron_ppm_valid != 1)
