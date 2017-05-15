@@ -51,6 +51,7 @@ rtDeclareVariable(float, max_radius2, , );
 rtBuffer<PackedPhotonRecord, 1>  Global_Photon_Map;
 rtBuffer<PackedHitRecord, 2>     rtpass_output_buffer;
 rtBuffer<uint3, 2>               camera_buffer;
+rtBuffer<uint3, 2>               image_rnd_seeds;
 rtDeclareVariable(float,         rtpass_default_radius2, , );
 rtDeclareVariable(float,         scene_epsilon, , );
 rtDeclareVariable(float,         alpha, , );
