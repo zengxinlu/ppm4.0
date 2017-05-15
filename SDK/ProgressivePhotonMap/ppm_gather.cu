@@ -50,7 +50,7 @@ rtBuffer<int>					 sp_valid_buffer;
 rtDeclareVariable(float, max_radius2, , );
 rtBuffer<PackedPhotonRecord, 1>  Global_Photon_Map;
 rtBuffer<PackedHitRecord, 2>     rtpass_output_buffer;
-rtBuffer<uint3, 2>               image_rnd_seeds;
+rtBuffer<uint3, 2>               camera_buffer;
 rtDeclareVariable(float,         rtpass_default_radius2, , );
 rtDeclareVariable(float,         scene_epsilon, , );
 rtDeclareVariable(float,         alpha, , );
@@ -281,45 +281,58 @@ float3 new_flux = rec_flux + flux_M;
 
 	int v[5];
 	int tot[5];
+	bool enough[5];
 	bool chip2[5];
 	double new_radius2 = rec_radius2;
+	double d_theta = 10;
 	for (int i = 0; i < 5; ++i)
 	{
-		if (i == 0) tot[i] = 0;
-		else tot[i] = tot[i - 1];
+		if (i == 0) tot[i] = 0; else tot[i] = tot[i - 1];
 		for (int j = 0; j < 8; ++j)
 			tot[i] += statistics[i * 8 + j];
-		if (tot[i] > 20 * (i + 1) * 8)
-		{
-			v[i] = 0;
+		enough[i] = tot[i] > d_theta * 8 * (i + 1);
+		v[i] = 0;
+		if (tot[i] > 0) {
 			double npi = (double)tot[i] / ((i + 1) * 8);
 			for (int j = 0; j <= i; ++j)
 				for (int k = 0; k < 8; ++k)
 					v[i] += (statistics[j * 8 + k] - npi) * (statistics[j * 8 + k] - npi);
 			v[i] /= npi;
-			chip2[i] = v[i] <= chip2_99[(i + 1) * 8 - 1];
-		}
-		else chip2[i] = true;
+			chip2[i] = v[i] <= chip2_9995[(i + 1) * 8 - 1];
+		} else chip2[i] = false;
 	}
-	
-	image_rnd_seeds[launch_index].z = 0;
-	if (!chip2[4])
+	if (enough[4] && !chip2[4])
 	{
-		image_rnd_seeds[launch_index].z = 1;
-		for (int i = 3; i >= 0; --i)
-			if (chip2[i] || v[i] / chip2_9995[(i + 1) * 8 - 1] <= v[4] / chip2_9995[(4 + 1) * 8 - 1])
+		for (int i = 0; i <= 3; ++i)
+			if (chip2[i])
 			{
-				new_radius2 = new_radius2 * ((i + 1.0) / 5.0);
-				for (int j = 0; j < 40; ++j)
-					statistics[j] = 0;
+				new_radius2 = rec_radius2 * ((i + 1.0) / 5.0);
 				break;
 			}
+		if (new_radius2 == rec_radius2) {
+			double standard = v[4] / chip2_99[(4 + 1) * 8 - 1];
+			for (int i = 3; i >= 0; --i) 
+				if (v[i] / chip2_99[(i + 1) * 8 - 1] < standard) {
+					standard = v[i] / chip2_99[(i + 1) * 8 - 1];
+					new_radius2 = rec_radius2 * ((i + 1.0) / 5.0);
+				}
+		}
 		if (new_radius2 == rec_radius2)
 		{
-			new_radius2 = new_radius2 * ((1.0) / 5.0);
-			for (int j = 0; j < 40; ++j)
-				statistics[j] = 0;
+			for (int i = 0; i <= 3; ++i) 
+				if (enough[i]) {
+					new_radius2 = new_radius2 * ((i + 1.0) / 5.0);
+					break;
+				}
 		}
+	}
+	 
+	if (new_radius2 == rec_radius2) {
+		camera_buffer[launch_index].z = 0;
+	} else {
+		camera_buffer[launch_index].z = 1;
+		for (int j = 0; j < 40; ++j)
+			statistics[j] = 0;
 	}
 
 	float new_Area = M_PI * new_radius2;

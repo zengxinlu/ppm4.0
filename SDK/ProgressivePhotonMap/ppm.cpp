@@ -810,6 +810,18 @@ void ProgressivePhotonScene::initEnterPointRayTrace(InitialCameraData& camera_da
 	m_context["rtpass_bg_color"]->setFloat( make_float3( 0.34f, 0.55f, 0.85f ) );
 
 	/// RTPass pixel sample buffers
+
+	Buffer camera_buffer = m_context->createBuffer(RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL, RT_FORMAT_UNSIGNED_INT3, WIDTH, HEIGHT);
+	m_context["camera_buffer"]->set(camera_buffer);
+	uint3* camera_seeds = reinterpret_cast<uint3*>(camera_buffer->map());
+	for (unsigned int i = 0; i < WIDTH*HEIGHT; ++i)
+	{
+		camera_seeds[i].x = random1u();
+		camera_seeds[i].y = random1u();
+		camera_seeds[i].z = 0;
+	}
+	camera_buffer->unmap();
+
 	Buffer image_rnd_seeds = m_context->createBuffer( RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL, RT_FORMAT_UNSIGNED_INT3, WIDTH, HEIGHT );
 	m_context["image_rnd_seeds"]->set( image_rnd_seeds );
 	uint3* seeds = reinterpret_cast<uint3*>( image_rnd_seeds->map() );
@@ -1111,7 +1123,7 @@ void ProgressivePhotonScene::buildGlobalPhotonMap()
 			temp_photons[i] = &photons_data[i];
 			//photonPrint(photons_data[i]);
 		}
-		fclose(stdin);
+		fclose(fin);
 	}
 
 	PhotonRecord* photon_map_data = reinterpret_cast<PhotonRecord*>(m_Global_Photon_Map->map());;
@@ -1920,7 +1932,8 @@ void ProgressivePhotonScene::doResize( unsigned int width, unsigned int height )
 	m_context["rtpass_output_buffer"]->getBuffer()->setSize( width, height );
 	m_context["output_buffer"       ]->getBuffer()->setSize( width, height );
 	m_context["direct_buffer"]->getBuffer()->setSize( width, height );
-	m_context["image_rnd_seeds"     ]->getBuffer()->setSize( width, height );
+	m_context["image_rnd_seeds"]->getBuffer()->setSize(width, height);
+	m_context["camera_buffer"]->getBuffer()->setSize(width, height);
 	m_context["debug_buffer"        ]->getBuffer()->setSize( width, height );
 	m_context["primary_edge_buffer"   ]->getBuffer()->setSize( width, height );
 	m_context["secondary_edge_buffer"   ]->getBuffer()->setSize( width, height );
@@ -1944,6 +1957,16 @@ void ProgressivePhotonScene::doResize( unsigned int width, unsigned int height )
 		m_camera_changed = false;
 	}
 
+	Buffer camera_buffer = m_context["camera_buffer"]->getBuffer();
+	uint3* camera_seeds = reinterpret_cast<uint3*>(camera_buffer->map());
+	for (unsigned int i = 0; i < width*height; ++i)
+	{
+		camera_seeds[i].x = random1u();
+		camera_seeds[i].y = random1u();
+		camera_seeds[i].z = 0;
+	}
+	camera_buffer->unmap();
+
 	Buffer image_rnd_seeds = m_context["image_rnd_seeds"]->getBuffer();
 	uint3* seeds = reinterpret_cast<uint3*>( image_rnd_seeds->map() );
 	for ( unsigned int i = 0; i < width*height; ++i )
@@ -1951,6 +1974,7 @@ void ProgressivePhotonScene::doResize( unsigned int width, unsigned int height )
 	{
 		seeds[i].x = random1u();
 		seeds[i].y = random1u();
+		seeds[i].z = 0;
 	}
 	image_rnd_seeds->unmap();
 }
@@ -2156,7 +2180,7 @@ int main( int argc, char** argv )
 		if (display_debug_buffer) scene.displayDebugBuffer();
 		scene.selectScene(model, modelNum);
 
-		//scene.useCollectionPhotons = true;
+		scene.useCollectionPhotons = true;
 		//scene.m_collect_photon = true;
 		//scene.collectPhotonsFrame = 10100;
 

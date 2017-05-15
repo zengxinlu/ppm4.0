@@ -59,6 +59,11 @@ static __host__ __device__ __inline__ float rnd(unsigned int &prev)
   return ((float) lcg(prev) / (float) 0x01000000);
 }
 
+static __host__ __device__ __inline__ float static_rnd(unsigned int &prev)
+{
+	return ((float)(prev & 0x00FFFFFF) / (float)0x01000000);
+}
+
 // Multiply with carry
 static __host__ __inline__ unsigned int mwc()
 {

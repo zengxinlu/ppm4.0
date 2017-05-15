@@ -1049,10 +1049,10 @@ glmUnitize(GLMmodel* model)
     model->vertices[3 * i + Y] *= scale;
     model->vertices[3 * i + Z] *= scale;
   }
-  printf("%.6f\n", scale);
+ /* printf("%.6f\n", scale);
   printf("%.6f %.6f %.6f\n", cx, cy, cz);
 
-  glmWriteOBJ(model, "trans.obj", GLM_FLAT);
+  glmWriteOBJ(model, "trans.obj", GLM_FLAT);*/
   return scale;
 }
 

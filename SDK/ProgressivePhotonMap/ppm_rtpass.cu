@@ -43,6 +43,7 @@ rtDeclareVariable(PPMLight,      light , , );
 rtBuffer<float3, 2>              direct_buffer;						//ֱ�ӹ���
 rtBuffer<HitRecord, 2>           rtpass_output_buffer;				//����׷�۵Ĺ���ͼ
 rtBuffer<uint3, 2>               image_rnd_seeds;					//��������
+rtBuffer<uint3, 2>               camera_buffer;					//��������
 rtBuffer<float, 2>               primary_edge_buffer;
 rtBuffer<float, 2>               secondary_edge_buffer;
 rtBuffer<int4, 2>                sp_triangle_info_buffer;
@@ -93,9 +94,15 @@ RT_PROGRAM void rtpass_camera()
 {
 	float2 screen = make_float2( rtpass_output_buffer.size() );
 	
-	uint3   seed   = image_rnd_seeds[launch_index];                       // If we start writing into this buffer here we will
-	float2 sample = make_float2( rnd(seed.x), rnd(seed.y) );				// need to make it an INPUT_OUTPUT buffer.  For now it
-	image_rnd_seeds[launch_index] = seed;                                // is just INPUT
+	uint3   seed   = camera_buffer[launch_index];						
+	float2  sample;
+	if (seed.z == 1) {
+		sample = make_float2( static_rnd(seed.x), static_rnd(seed.y) );
+		seed.z = 0;
+	} else {
+		sample = make_float2( rnd(seed.x), rnd(seed.y) );
+	}	
+	camera_buffer[launch_index] = seed;                                // is just INPUT
 	
 	//if (frame_number < 1.0f)
 		//sample = make_float2( 0.5f, 0.5f );								// ��һ֡ ��׼����
