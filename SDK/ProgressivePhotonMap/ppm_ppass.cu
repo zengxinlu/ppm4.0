@@ -1,4 +1,4 @@
-
+﻿
 /*
 * Copyright (c) 2008 - 2009 NVIDIA Corporation.  All rights reserved.
 *
@@ -53,7 +53,7 @@ static __device__ __inline__ float2 rnd_from_uint2( uint2& prev )
 static __device__ __inline__ void generateAreaLightPhoton( const PPMLight& light, const float4& d_sample, float3& o, float3& d, float mscale)
 {
 	// Choose a random position on light
-	o = light.anchor + d_sample.z * light.v1 + d_sample.w * light.v2;
+	o = light.anchor + (d_sample.z * 2 - 1) * light.v1 + (d_sample.w * 2 - 1) * light.v2;
 
 	// Choose a random direction from light
 	float3 U, V, W;
@@ -107,7 +107,7 @@ RT_PROGRAM void global_ppass_camera()
 	Globalphoton_rnd_seeds[launch_index] = seed;
 
 	if( light.is_area_light ) {
-		generateAreaLightPhoton( light, direction_sample, ray_origin, ray_direction, 0.5 );
+		generateAreaLightPhoton( light, direction_sample, ray_origin, ray_direction, 1.0 );
 	} else {
 		generateSpotLightPhoton( light, direction_sample, ray_origin, ray_direction );
 	}
@@ -147,6 +147,8 @@ rtDeclareVariable(float3, texcoord, attribute texcoord, );
 rtTextureSampler<float4, 2> diffuse_map;
 rtTextureSampler<float4, 2> specular_map;
 
+rtBuffer<uint2, 2>               image_rnd_seeds;					//随机种子
+
 RT_PROGRAM void global_ppass_closest_hit()
 {
 	// Check if this is a light source
@@ -165,15 +167,13 @@ RT_PROGRAM void global_ppass_closest_hit()
 	float n_dot_l = dot(ffnormal, -ray.direction);
 	if( fmaxf( Kd ) > 0.0f && n_dot_l > 0.f) {
 		// We hit a diffuse surface; record hit if it has bounced at least once
-		if( hit_record.ray_depth > 2 ) {		// For Sibnik
-		//if( hit_record.ray_depth > 0 ) {		// For other
+		if( hit_record.ray_depth > 0 ) {
 			PhotonRecord& rec = Global_Photon_Buffer[hit_record.pm_index + hit_record.num_deposits];
 			rec.position = hit_point;
 			rec.normal = ffnormal;
 			rec.ray_dir = ray.direction;
 			rec.energy = hit_record.energy * n_dot_l * Kd;
 			float tempFloat;
-			rec.triangleIndex = triangle_info.w;
 			hit_record.num_deposits++;
 			if (hit_record.num_deposits >= max_photon_count)
 				return;
@@ -182,13 +182,21 @@ RT_PROGRAM void global_ppass_closest_hit()
 		float3 U, V, W;
 		createONB(ffnormal, U, V, W);
 		sampleUnitHemisphere(rnd_from_uint2(hit_record.sample), U, V, W, new_ray_dir);
+
+		hit_record.ray_depth++;
+		if ( hit_record.ray_depth >= max_depth) return;
+		optix::Ray new_ray( hit_point, new_ray_dir, RayTypeGlobalPass, scene_epsilon );
+		rtTrace(top_object, new_ray, hit_record);
 	} 
 	else
 	{
-		while (1)
-		{	// if it is fraction ����
+		while (1) {
 			if (Alpha < 1)
 			{
+				PhotonPRD refract_prd = hit_record;
+				refract_prd.ray_depth ++;
+				if ( refract_prd.ray_depth >= max_depth) break;
+
 				float refraction_facter = 1.5;
 				float critical_sina = 1/refraction_facter;
 				float critical_radian = asinf(critical_sina);
@@ -198,47 +206,54 @@ RT_PROGRAM void global_ppass_closest_hit()
 				float bottom_incidence_t = powf(1 - top_refacter, 1/max_incidence_radian);
 				float bottom_emergent_t = powf(1 - top_refacter, 1/max_emergent_radian);
 				float K_refacter = 1;
-
-				// ����
-				if (refract(new_ray_dir, ray.direction, world_shading_normal, refraction_facter) == true)
+		
+				float3 R;
+				// 折射
+				if (refract(R, direction, world_shading_normal, refraction_facter) == true)
 				{
-					// ������
-					float incidence_sina = sqrtf( 1.0 - powf( fabsf(dot(ray.direction, world_shading_normal)), 2.0f) );
+					// 入射角
+					float incidence_sina = sqrtf( 1.0 - powf( fabsf(dot(direction, world_shading_normal)), 2.0f) );
 					float incidence_radian = asinf(incidence_sina);
 
-					// ������
-					if ( dot(ray.direction, world_shading_normal) < 0)
+					// 折射率
+					if ( dot(direction, world_shading_normal) < 0)
 						K_refacter = 1 - pow(bottom_incidence_t, max_incidence_radian - incidence_radian);
 					else
 						K_refacter = 1 - pow(bottom_emergent_t, max_emergent_radian - incidence_radian);
 
-					hit_record.energy *= K_refacter;
+					refract_prd.energy *= K_refacter;
 					temp_Ks = make_float3(1 - K_refacter);
+
+					optix::Ray refr_ray( hit_point, R, RayTypeGlobalPass, scene_epsilon );
+					rtTrace( top_object, refr_ray, refract_prd );
 				}
-				// ȫ����
+				// 全反射
 				else
 				{
-					hit_record.energy *= 1.0f;
-					new_ray_dir = reflect( ray.direction, ffnormal );
+					refract_prd.energy *= 1.0f;
+					if (fmaxf( temp_Ks ) > 0.0f) 
+					{
+						R = reflect( direction, ffnormal );
+						optix::Ray refr_ray( hit_point, R, RayTypeGlobalPass, scene_epsilon );
+						rtTrace( top_object, refr_ray, refract_prd );
+					}
 				}
 				break;
 			}
-			// ����
+
 			if (fmaxf( temp_Ks ) > 0.0f) 
 			{
-				new_ray_dir = reflect( ray.direction, ffnormal );
-				hit_record.energy *= temp_Ks;
+				float3 Reflect_dir = reflect( direction, ffnormal );
+				PhotonPRD reflect_prd = hit_record;
+				reflect_prd.energy *= temp_Ks;
+				reflect_prd.ray_depth ++;
+				if (reflect_prd.ray_depth >= max_depth) break;
+				optix::Ray refl_ray( hit_point, Reflect_dir, RayTypeGlobalPass, scene_epsilon );
+				rtTrace( top_object, refl_ray, reflect_prd );
 			}
 			break;
 		}
 	}
-
-	hit_record.ray_depth++;
-	if ( hit_record.ray_depth >= max_depth )//|| hit_record.ray_depth > max_depth)
-		return;
-
-	optix::Ray new_ray( hit_point, new_ray_dir, RayTypeGlobalPass, scene_epsilon );
-	rtTrace(top_object, new_ray, hit_record);
 }
 
 
@@ -302,7 +317,6 @@ RT_PROGRAM void caustics_ppass_closest_hit() {
 			rec.ray_dir = ray.direction;
 			rec.energy =  Kd * n_dot_l * hit_record.energy;
 			float tempFloat;
-			rec.triangleIndex = triangle_info.w;
 			hit_record.num_deposits++;
 			if (hit_record.num_deposits >= max_photon_count)
 				return;
@@ -315,7 +329,7 @@ RT_PROGRAM void caustics_ppass_closest_hit() {
 	else
 	{
 		while (1)
-		{	// if it is fraction ����
+		{	// if it is fraction 折射
 			if (Alpha < 1)
 			{
 				float refraction_facter = 1.5;
@@ -328,14 +342,14 @@ RT_PROGRAM void caustics_ppass_closest_hit() {
 				float bottom_emergent_t = powf(1 - top_refacter, 1/max_emergent_radian);
 				float K_refacter = 1;
 
-				// ����
+				// 折射
 				if (refract(new_ray_dir, ray.direction, world_shading_normal, refraction_facter) == true)
 				{
-					// ������
+					// 入射角
 					float incidence_sina = sqrtf( 1.0 - powf( fabsf(dot(ray.direction, world_shading_normal)), 2.0f) );
 					float incidence_radian = asinf(incidence_sina);
 
-					// ������
+					// 折射率
 					if ( dot(ray.direction, world_shading_normal) < 0)
 						K_refacter = 1 - pow(bottom_incidence_t, max_incidence_radian - incidence_radian);
 					else
@@ -344,7 +358,7 @@ RT_PROGRAM void caustics_ppass_closest_hit() {
 					hit_record.energy *= K_refacter;
 					temp_Ks = make_float3(1 - K_refacter);
 				}
-				// ȫ����
+				// 全反射
 				else
 				{
 					hit_record.energy *= 1.0f;
@@ -352,7 +366,7 @@ RT_PROGRAM void caustics_ppass_closest_hit() {
 				}
 				break;
 			}
-			// ����
+			// 反射
 			if (fmaxf( temp_Ks ) > 0.0f) 
 			{
 				new_ray_dir = reflect( ray.direction, ffnormal );
