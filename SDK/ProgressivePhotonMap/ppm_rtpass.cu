@@ -97,9 +97,8 @@ RT_PROGRAM void rtpass_camera()
 	float2 sample = make_float2( rnd(seed.x), rnd(seed.y) );				// need to make it an INPUT_OUTPUT buffer.  For now it
 	image_rnd_seeds[launch_index] = seed;                                // is just INPUT
 	
-	if (frame_number < 1.0f)
-		sample = make_float2( 0.5f, 0.5f );								// 第一帧 标准方向
-	//float2 sample = make_float2( 0.5f, 0.5f ); 
+	//if (frame_number < 1.0f)
+		//sample = make_float2( 0.5f, 0.5f );								// 第一帧 标准方向
 
 	float2 d = ( make_float2(launch_index) + sample ) / screen * 2.0f - 1.0f;
 	float3 ray_origin = rtpass_eye;
