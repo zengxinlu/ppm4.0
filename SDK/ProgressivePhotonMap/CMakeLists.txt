@@ -36,6 +36,7 @@ if(GLUT_FOUND AND OPENGL_FOUND)
     ppm_rtpass.cu
     ppm_ppass.cu
     ppm_gather.cu
+    ppm_initRadius.cu
 
 	# add
 	jfv.cu

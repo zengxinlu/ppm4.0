@@ -293,6 +293,7 @@ private:
 		EnterPointCausticsGather,
 		EnterPointGlobalPass,
 		EnterPointGlobalGather,
+		EnterPointInitRadius,
 		EnterPointNum
 	};
 
@@ -360,6 +361,7 @@ private:
 	void initEnterPointRayTrace(InitialCameraData& camera_data);
 	void initEnterPointGlobalGather();
 	void initEnterPointCausticsGather();
+	void initEnterPointInitRadius();
 	void initGeometryInstances(InitialCameraData& camera_data);
 	
 	int Global_Photon_Buffer_Size;
@@ -371,6 +373,7 @@ private:
 	Buffer m_Caustics_Photon_Buffer;
 	Buffer m_Caustics_Photon_Count;
 	Buffer m_Caustics_Photon_Map;
+	string cuda_initRadius_cu;
 	string cuda_gather_cu;
 	string cuda_ppass_cu;
 	string cuda_rtpass_cu;
@@ -646,6 +649,7 @@ void ProgressivePhotonScene::loadScene(InitialCameraData& camera_data) {
 }
 void ProgressivePhotonScene::initGlobal() {
 
+	cuda_initRadius_cu = "ppm_initRadius.cu";
 	cuda_gather_cu = "ppm_gather.cu";
 	cuda_ppass_cu = "ppm_ppass.cu";
 	cuda_rtpass_cu = "ppm_rtpass.cu";
@@ -865,6 +869,15 @@ void ProgressivePhotonScene::initEnterPointCausticsGather() {
 	Program exception_program = m_context->createProgramFromPTXFile( gather_ptx_path, "gather_exception" );
 	m_context->setExceptionProgram( EnterPointCausticsGather, exception_program );
 }
+void ProgressivePhotonScene::initEnterPointInitRadius() {
+	/// Gather phase
+	std::string init_ptx_path = ptxpath(projectName, cuda_initRadius_cu);
+	std::string init_program_name = "initRadius";
+	Program init_program = m_context->createProgramFromPTXFile(init_ptx_path, init_program_name);
+	m_context->setRayGenerationProgram(EnterPointInitRadius, init_program);
+	Program exception_program = m_context->createProgramFromPTXFile(init_ptx_path, "init_exception");
+	m_context->setExceptionProgram(EnterPointInitRadius, exception_program);
+}
 void ProgressivePhotonScene::initGeometryInstances(InitialCameraData& camera_data) {
 	loadScene(camera_data);
 
@@ -886,6 +899,7 @@ void ProgressivePhotonScene::initScene( InitialCameraData& camera_data )
 	initEnterPointCausticsPhotonTrace();
 	initEnterPointGlobalGather();
 	initEnterPointCausticsGather();
+	initEnterPointInitRadius();
 	initGeometryInstances(camera_data);
 	m_context->validate();
 	m_context->compile();
@@ -1836,6 +1850,14 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 	/// Trace photons
 	buildGlobalPhotonMap();
 	//buildCausticsPhotonMap();
+
+	if (m_frame_number == 0) {
+		t0 = sutil::currentTime();
+
+		m_context->launch(EnterPointInitRadius, buffer_width, buffer_height);
+
+		t1 = sutil::currentTime();
+	}
 
 	/// Shade view rays by gathering photons
 	if (m_print_timings) std::cerr << "Starting gather pass   ... ";
