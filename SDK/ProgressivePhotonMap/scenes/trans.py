@@ -3,10 +3,10 @@ import yaml
 f = open('box/box1.yaml')
 x = yaml.load(f)
 
-scale = 0.001825
-cx = 25.124405 
-cy = 3.109848 
-cz = 11.797455
+scale = 0.000841
+cx = 0.000000 
+cy = -86.309509
+cz = -210.607666
 
 def trans(p):
     p = [x / scale for x in p]

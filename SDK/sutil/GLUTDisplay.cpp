@@ -95,7 +95,7 @@ bool           GLUTDisplay::m_use_sRGB             = false;
 bool           GLUTDisplay::m_initialized          = false;
 bool           GLUTDisplay::m_benchmark_no_display = false;
 unsigned int   GLUTDisplay::m_warmup_frames        = 50u;//50u;
-unsigned int   GLUTDisplay::m_timed_frames         = 100010u;//30u;
+unsigned int   GLUTDisplay::m_timed_frames         = 10010u;//30u;
 double         GLUTDisplay::m_warmup_start         = 0;
 double         GLUTDisplay::m_warmup_time          = 10.0;
 double         GLUTDisplay::m_benchmark_time       = 10.0;
@@ -772,6 +772,9 @@ void GLUTDisplay::display()
 		if (m_frame_count < m_timed_frames)
 		{nvtx::ScopedRange r( "trace" );
 		m_scene->trace( camera_data );
+		}
+		else {
+			quit();
 		}
 
 		// Always count rendered frames
