@@ -13,6 +13,6 @@ light_data:
   radius: 0.03490658504
   power: [1.0, 1.0, 1.0]
 default_radius: 0.0016
-blend_mothod: [3.0, 3.0]
+blend_mothod: [0.0, 1.0]
 filename: "scenes/sponza/sponza.obj"
 

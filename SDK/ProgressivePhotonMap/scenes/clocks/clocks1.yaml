@@ -13,5 +13,5 @@ light_data:
   v1: 0.01
   v2: 0.01
 default_radius: 0.00001
-blend_mothod: [1.0, 1.0]
+blend_mothod: [0.0, 1.0]
 filename: "scenes/clocks/clocks.obj"

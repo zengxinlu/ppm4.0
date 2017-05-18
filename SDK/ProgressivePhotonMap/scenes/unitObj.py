@@ -1,8 +1,9 @@
-f = open('Diamond/Diamond.obj')
-out = open('Diamond/Diamond-unit.obj', 'w')
+f = open('clocks/clocks.obj')
+out = open('clocks/clocks-unit.obj', 'w')
 
 
-scale = 0.999998
+scale = 0.999782
+
 
 tranlate = [0,0,0]
 
