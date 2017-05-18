@@ -1800,6 +1800,14 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 		m_context["rtpass_U"]->setFloat( camera_data.U );
 		m_context["rtpass_V"]->setFloat( camera_data.V );
 		m_context["rtpass_W"]->setFloat( camera_data.W );
+
+		std::cerr << "\n\nthe camera eye: " << camera_data.eye.x << ","
+			<< camera_data.eye.y << ","
+			<< camera_data.eye.z << std::endl;
+		float3 c_look_at = camera_data.eye + camera_data.W * 100.f;
+		std::cerr << "the camera lookat: " << c_look_at.x << ","
+			<< c_look_at.y << ","
+			<< c_look_at.z << std::endl;
 	}
 
 	/// Trace viewing rays
