@@ -348,6 +348,7 @@ private:
 	const static unsigned int WIDTH;
 	const static unsigned int HEIGHT;
 	const static unsigned int MAX_PHOTON_COUNT;
+	const static unsigned int MAX_PHOTON_DEPTH;
 	const static unsigned int PHOTON_LAUNCH_WIDTH;
 	const static unsigned int PHOTON_LAUNCH_HEIGHT;
 	const static unsigned int NUM_PHOTONS;
@@ -392,6 +393,7 @@ const unsigned int ProgressivePhotonScene::HEIGHT = 600u;
 /// const unsigned int ProgressivePhotonScene::HEIGHT = 256u;
 
 const unsigned int ProgressivePhotonScene::MAX_PHOTON_COUNT = 2u;
+const unsigned int ProgressivePhotonScene::MAX_PHOTON_DEPTH = 8u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 256u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 256u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 1024u;
@@ -432,7 +434,7 @@ void updateLight(PPMLight &light, float3 dis_float3)
 	light.position += dis_float3;
 
 	light.direction = normalize( m_light_target  - light.position );
-	light.anchor = light.position + light.direction * 0.01f;
+	light.anchor = light.position + light.direction * 0.0f;
 
 	float3 m_light_t_normal;
 	m_light_t_normal = cross(light.v1, light.direction);
@@ -620,8 +622,7 @@ void ProgressivePhotonScene::loadScene(InitialCameraData& camera_data) {
 		m_light.direction = make_float3(direction[0], direction[1], direction[2]);
 	}
 	if (m_light.is_area_light) {
-		m_light.anchor = m_light.position + m_light.direction * 0.01;
-		mprintf(m_light.anchor);
+		m_light.anchor = m_light.position + m_light.direction * 0.0f;
 		m_light.v1 = make_float3(1.0f, 0.f, 0.0f) * lightData["v1"].as<double>();
 		m_light.v2 = make_float3(0.0f, 0.f, 1.0f) * lightData["v2"].as<double>();
 		float3 m_light_t_normal;
@@ -681,7 +682,7 @@ void ProgressivePhotonScene::initGlobal() {
 	m_context->setEntryPointCount( EnterPointNum );
 	m_context->setStackSize( 640 );
 
-	m_context["max_depth"]->setUint(8);
+	m_context["max_depth"]->setUint(MAX_PHOTON_DEPTH);
 	m_context["max_photon_count"]->setUint(MAX_PHOTON_COUNT);
 	m_context["scene_epsilon"]->setFloat( 0.0001f );
 	m_context["alpha"]->setFloat( 0.7f );

@@ -1,8 +1,8 @@
-f = open('sponza/sponza.obj')
-out = open('sponza/sponza-unit.obj', 'w')
+f = open('Diamond/Diamond.obj')
+out = open('Diamond/Diamond-unit.obj', 'w')
 
 
-scale = 0.999091
+scale = 0.999998
 
 tranlate = [0,0,0]
 

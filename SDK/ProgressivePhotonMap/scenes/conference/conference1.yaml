@@ -6,7 +6,7 @@ camera_data:
 light_data:
   is_area_light: 1
   direction: [0.0, -1.0, 0.0]
-  position: [0.0, 0.25, 0.0]
+  position: [0.0, 0.24, 0.0]
   v1: 0.224
   v2: 0.08
   radius: 0.001745329252
