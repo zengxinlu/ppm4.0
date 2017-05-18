@@ -392,14 +392,14 @@ const unsigned int ProgressivePhotonScene::HEIGHT = 600u;
 /// const unsigned int ProgressivePhotonScene::WIDTH  = 256u;
 /// const unsigned int ProgressivePhotonScene::HEIGHT = 256u;
 
-const unsigned int ProgressivePhotonScene::MAX_PHOTON_COUNT = 2u;
+const unsigned int ProgressivePhotonScene::MAX_PHOTON_COUNT = 20u;
 const unsigned int ProgressivePhotonScene::MAX_PHOTON_DEPTH = 8u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 256u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 256u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 1024u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 1024u;
-const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 512u;
-const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 512u;
+const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 256u;
+const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 256u;
 const unsigned int ProgressivePhotonScene::NUM_PHOTONS = (ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH *
 	ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT *
 	ProgressivePhotonScene::MAX_PHOTON_COUNT);
@@ -2174,7 +2174,7 @@ int main( int argc, char** argv )
 		if (display_debug_buffer) scene.displayDebugBuffer();
 		scene.selectScene(model, modelNum);
 
-		scene.useCollectionPhotons = true;
+		//scene.useCollectionPhotons = true;
 		//scene.m_collect_photon = true;
 		//scene.collectPhotonsFrame = 1010;
 

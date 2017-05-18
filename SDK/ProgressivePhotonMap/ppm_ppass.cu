@@ -238,14 +238,14 @@ RT_PROGRAM void global_ppass_closest_hit()
 						optix::Ray refr_ray( hit_point, R, RayTypeGlobalPass, scene_epsilon );
 						rtTrace( top_object, refr_ray, refract_prd );
 					}
+					break;
 				}
-				break;
 			}
 
 			if (fmaxf( temp_Ks ) > 0.0f) 
 			{
 				float3 Reflect_dir = reflect( direction, ffnormal );
-				PhotonPRD reflect_prd = hit_record;
+				PhotonPRD reflect_prd = hit_record; 
 				reflect_prd.energy *= temp_Ks;
 				reflect_prd.ray_depth ++;
 				if (reflect_prd.ray_depth >= max_depth) break;

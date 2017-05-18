@@ -11,7 +11,7 @@ newmtl staklo
 	d 0.100000
 	Ka 0.000000 0.000000 0.000000
 	Kd 0.784314 0.784314 0.784314
-	Ks 0.784314 0.784314 0.784314
+	Ks 0.000000 0.000000 0.000000
 	
 newmtl kamen_zid
 	d 1.000000
@@ -67,15 +67,6 @@ newmtl kamen_zid_prozor
 #map_bump kamen-bump.jpg
 #bump kamen-bump.jpg
 
-d 1.000000
-	Ka 0.000000 0.000000 0.000000
-	Kd 0.734118 0.730588 0.674118
-	Ks 0.000000 0.000000 0.000000
-	map_Ka kamen.jpg
-	map_Kd kamen.jpg
-#map_bump kamen-bump.jpg
-#bump kamen-bump.jpg
-
 newmtl kamen_zid_parapet
 	d 1.000000
 	Ka 0.000000 0.000000 0.000000
@@ -88,7 +79,7 @@ newmtl staklo_crveno
 	d 0.800000
 	Ka 0.000000 0.000000 0.000000
 	Kd 0.441176 0.103922 0.049020
-	Ks 0.882353 0.207843 0.098039
+	Ks 0.000000 0.000000 0.000000
 	
 newmtl rozeta
 	d 1.000000
@@ -102,18 +93,18 @@ newmtl rozeta
 newmtl staklo_zeleno
 	d 1.000000
 	Ka 0.000000 0.000000 0.000000
-	Kd 0.033333 0.315686 0.037255
+	Kd 0.000000 0.000000 0.000000
 	Ks 0.8 0.8 0.8
 	
 newmtl staklo_plavo
 	d 1.000000
 	Ka 0.000000 0.000000 0.000000
-	Kd 0.041177 0.072549 0.392157
+	Kd 0.000000 0.000000 0.000000
 	Ks 0.800000 0.800000 0.800000 
 	
 newmtl staklo_zuto
 	d 1.000000
 	Ka 0.000000 0.000000 0.000000
-	Kd 0.500000 0.445098 0.003922
+	Kd 0.000000 0.000000 0.000000
 	Ks 0.8 0.8 0.8
 	
