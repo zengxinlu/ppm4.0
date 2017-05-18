@@ -43,6 +43,7 @@ rtDeclareVariable(PPMLight,      light , , );
 rtBuffer<float3, 2>              direct_buffer;						//直接光照
 rtBuffer<HitRecord, 2>           rtpass_output_buffer;				//光线追综的光子图
 rtBuffer<uint2, 2>               image_rnd_seeds;					//随机种子
+rtBuffer<uint3, 2>               camera_buffer;	
 rtBuffer<float, 2>               primary_edge_buffer;
 rtBuffer<float, 2>               secondary_edge_buffer;
 rtBuffer<int4, 2>                sp_triangle_info_buffer;
@@ -93,12 +94,12 @@ RT_PROGRAM void rtpass_camera()
 {
 	float2 screen = make_float2( rtpass_output_buffer.size() );
 	
-	uint2   seed   = image_rnd_seeds[launch_index];                       // If we start writing into this buffer here we will
+	uint3   seed   = camera_buffer[launch_index];                       // If we start writing into this buffer here we will
 	float2 sample = make_float2( rnd(seed.x), rnd(seed.y) );				// need to make it an INPUT_OUTPUT buffer.  For now it
-	image_rnd_seeds[launch_index] = seed;                                // is just INPUT
+	camera_buffer[launch_index] = seed;                                // is just INPUT
 	
-	//if (frame_number < 1.0f)
-		//sample = make_float2( 0.5f, 0.5f );								// 第一帧 标准方向
+	if (frame_number < 1.0f)
+		sample = make_float2( 0.5f, 0.5f );								// 第一帧 标准方向
 
 	float2 d = ( make_float2(launch_index) + sample ) / screen * 2.0f - 1.0f;
 	float3 ray_origin = rtpass_eye;

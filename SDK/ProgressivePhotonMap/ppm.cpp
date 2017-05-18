@@ -812,6 +812,17 @@ void ProgressivePhotonScene::initEnterPointRayTrace(InitialCameraData& camera_da
 	m_context->setMissProgram( EnterPointRayTrace, m_context->createProgramFromPTXFile( ptx_path, "rtpass_miss" ) );
 	m_context["rtpass_bg_color"]->setFloat( make_float3( 0.34f, 0.55f, 0.85f ) );
 
+	Buffer camera_buffer = m_context->createBuffer(RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL, RT_FORMAT_UNSIGNED_INT3, WIDTH, HEIGHT);
+	m_context["camera_buffer"]->set(camera_buffer);
+	uint3* camera_seeds = reinterpret_cast<uint3*>(camera_buffer->map());
+	for (unsigned int i = 0; i < WIDTH*HEIGHT; ++i)
+	{
+		camera_seeds[i].x = 0;
+		camera_seeds[i].y = 0;
+		camera_seeds[i].z = 0;
+	}
+	camera_buffer->unmap();
+
 	/// RTPass pixel sample buffers
 	Buffer image_rnd_seeds = m_context->createBuffer( RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL, RT_FORMAT_UNSIGNED_INT2, WIDTH, HEIGHT );
 	m_context["image_rnd_seeds"]->set( image_rnd_seeds );
@@ -1920,6 +1931,7 @@ void ProgressivePhotonScene::doResize( unsigned int width, unsigned int height )
 	m_context["output_buffer"       ]->getBuffer()->setSize( width, height );
 	m_context["direct_buffer"]->getBuffer()->setSize( width, height );
 	m_context["image_rnd_seeds"     ]->getBuffer()->setSize( width, height );
+	m_context["camera_buffer"]->getBuffer()->setSize(width, height);
 	m_context["debug_buffer"        ]->getBuffer()->setSize( width, height );
 	m_context["primary_edge_buffer"   ]->getBuffer()->setSize( width, height );
 	m_context["secondary_edge_buffer"   ]->getBuffer()->setSize( width, height );
@@ -1942,6 +1954,16 @@ void ProgressivePhotonScene::doResize( unsigned int width, unsigned int height )
 	{
 		m_camera_changed = false;
 	}
+
+	Buffer camera_buffer = m_context["camera_buffer"]->getBuffer();
+	uint3* camera_seeds = reinterpret_cast<uint3*>(camera_buffer->map());
+	for (unsigned int i = 0; i < width*height; ++i)
+	{
+		camera_seeds[i].x = 0;
+		camera_seeds[i].y = 0;
+		camera_seeds[i].z = 0;
+	}
+	camera_buffer->unmap();
 
 	Buffer image_rnd_seeds = m_context["image_rnd_seeds"]->getBuffer();
 	uint2* seeds = reinterpret_cast<uint2*>( image_rnd_seeds->map() );
@@ -2151,7 +2173,7 @@ int main( int argc, char** argv )
 		if (display_debug_buffer) scene.displayDebugBuffer();
 		scene.selectScene(model, modelNum);
 
-		//scene.useCollectionPhotons = true;
+		scene.useCollectionPhotons = true;
 		//scene.m_collect_photon = true;
 		//scene.collectPhotonsFrame = 1010;
 
