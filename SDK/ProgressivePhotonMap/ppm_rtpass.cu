@@ -104,9 +104,8 @@ RT_PROGRAM void rtpass_camera()
 	}	
 	camera_buffer[launch_index] = seed;                                // is just INPUT
 	
-	//if (frame_number < 1.0f)
-		//sample = make_float2( 0.5f, 0.5f );								// ��һ֡ ��׼����
-	//float2 sample = make_float2( 0.5f, 0.5f ); 
+	if (frame_number < 1.0f)
+		sample = make_float2( 0.5f, 0.5f );								
 
 	float2 d = ( make_float2(launch_index) + sample ) / screen * 2.0f - 1.0f;
 	float3 ray_origin = rtpass_eye;

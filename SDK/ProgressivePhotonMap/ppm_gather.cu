@@ -285,7 +285,7 @@ float3 new_flux = rec_flux + flux_M;
 	bool enough[5];
 	bool chip2[5];
 	double new_radius2 = rec_radius2;
-	double d_theta = 10;
+	double d_theta = 20;
 	for (int i = 0; i < 5; ++i)
 	{
 		if (i == 0) tot[i] = 0; else tot[i] = tot[i - 1];
@@ -331,7 +331,7 @@ float3 new_flux = rec_flux + flux_M;
 	if (new_radius2 == rec_radius2) {
 		camera_buffer[launch_index].z = 0;
 	} else {
-		camera_buffer[launch_index].z = 1;
+		camera_buffer[launch_index].z = 0;
 		for (int j = 0; j < 40; ++j)
 			statistics[j] = 0;
 	}

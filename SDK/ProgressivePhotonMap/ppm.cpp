@@ -820,8 +820,8 @@ void ProgressivePhotonScene::initEnterPointRayTrace(InitialCameraData& camera_da
 	uint3* camera_seeds = reinterpret_cast<uint3*>(camera_buffer->map());
 	for (unsigned int i = 0; i < WIDTH*HEIGHT; ++i)
 	{
-		camera_seeds[i].x = random1u();
-		camera_seeds[i].y = random1u();
+		camera_seeds[i].x = 0;
+		camera_seeds[i].y = 0;
 		camera_seeds[i].z = 0;
 	}
 	camera_buffer->unmap();
@@ -1856,7 +1856,7 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 
 		m_context->launch(EnterPointInitRadius, buffer_width, buffer_height);
 
-		t1 = sutil::currentTime();
+		t1 = sutil::currentTime(); 
 	}
 
 	/// Shade view rays by gathering photons
@@ -1983,8 +1983,8 @@ void ProgressivePhotonScene::doResize( unsigned int width, unsigned int height )
 	uint3* camera_seeds = reinterpret_cast<uint3*>(camera_buffer->map());
 	for (unsigned int i = 0; i < width*height; ++i)
 	{
-		camera_seeds[i].x = random1u();
-		camera_seeds[i].y = random1u();
+		camera_seeds[i].x = 0;
+		camera_seeds[i].y = 0;
 		camera_seeds[i].z = 0;
 	}
 	camera_buffer->unmap();
@@ -2202,7 +2202,7 @@ int main( int argc, char** argv )
 		if (display_debug_buffer) scene.displayDebugBuffer();
 		scene.selectScene(model, modelNum);
 
-		//scene.useCollectionPhotons = true;
+		scene.useCollectionPhotons = true;
 		//scene.m_collect_photon = true;
 		//scene.collectPhotonsFrame = 10100;
 

@@ -1,0 +1,10 @@
+﻿  Checking Build System
+  CMake does not need to re-run because E:/zxl/chip4.0/SDK-build/CMakeFiles/generate.stamp is up-to-date.
+  CMake is re-running because E:/zxl/chip4.0/SDK-build/ProgressivePhotonMap/CMakeFiles/generate.stamp is out-of-date.
+    the file 'E:/zxl/chip4.0/SDK/ProgressivePhotonMap/CMakeLists.txt'
+    is newer than 'E:/zxl/chip4.0/SDK-build/ProgressivePhotonMap/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Generating dependencies for ppm_initRadius.cu
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: E:/zxl/chip4.0/SDK-build
