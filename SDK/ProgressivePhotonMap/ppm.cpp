@@ -251,6 +251,7 @@ public:
 
 	void collectionPhotons(std::string filename, int frameNum);
 	bool useCollectionPhotons = false;
+	bool useKnnInitRadius = false;
 	bool m_collect_photon = false;
 	int  collectPhotonsFrame = 1000;
 
@@ -392,14 +393,14 @@ const unsigned int ProgressivePhotonScene::HEIGHT = 600u;
 /// const unsigned int ProgressivePhotonScene::WIDTH  = 256u;
 /// const unsigned int ProgressivePhotonScene::HEIGHT = 256u;
 
-const unsigned int ProgressivePhotonScene::MAX_PHOTON_COUNT = 20u;
+const unsigned int ProgressivePhotonScene::MAX_PHOTON_COUNT = 2u;
 const unsigned int ProgressivePhotonScene::MAX_PHOTON_DEPTH = 8u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 256u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 256u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 1024u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 1024u;
-const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 256u;
-const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 256u;
+const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 512u;
+const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 512u;
 const unsigned int ProgressivePhotonScene::NUM_PHOTONS = (ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH *
 	ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT *
 	ProgressivePhotonScene::MAX_PHOTON_COUNT);
@@ -1823,7 +1824,7 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 	buildGlobalPhotonMap();
 	//buildCausticsPhotonMap();
 
-	if (m_frame_number == 0) {
+	if (m_frame_number == 0 && useKnnInitRadius) {
 		t0 = sutil::currentTime();
 
 		m_context->launch(EnterPointInitRadius, buffer_width, buffer_height);
@@ -2182,6 +2183,7 @@ int main( int argc, char** argv )
 		if (display_debug_buffer) scene.displayDebugBuffer();
 		scene.selectScene(model, modelNum);
 
+		//scene.useKnnInitRadius = true;
 		//scene.useCollectionPhotons = true;
 		//scene.m_collect_photon = true;
 		//scene.collectPhotonsFrame = 1010;

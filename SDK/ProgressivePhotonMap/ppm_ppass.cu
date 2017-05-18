@@ -167,7 +167,7 @@ RT_PROGRAM void global_ppass_closest_hit()
 	float n_dot_l = dot(ffnormal, -ray.direction);
 	if( fmaxf( Kd ) > 0.0f && n_dot_l > 0.f) {
 		// We hit a diffuse surface; record hit if it has bounced at least once
-		if( hit_record.ray_depth >= 0 ) {
+		if( hit_record.ray_depth > 0 ) {
 			PhotonRecord& rec = Global_Photon_Buffer[hit_record.pm_index + hit_record.num_deposits];
 			rec.position = hit_point;
 			rec.normal = ffnormal;
