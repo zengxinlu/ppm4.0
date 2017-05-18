@@ -74,7 +74,7 @@ RT_PROGRAM void initRadius()
 	double farestDis = 0;
 	int farestId = 0;
 	int currCollection = 0;
-	int collectionNum = 20;
+	int collectionNum = 50;
 
 #define push_node(N) stack[stack_current++] = (N)
 #define pop_node()   stack[--stack_current]

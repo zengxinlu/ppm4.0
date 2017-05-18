@@ -237,8 +237,8 @@ RT_PROGRAM void global_ppass_closest_hit()
 						optix::Ray refr_ray( hit_point, R, RayTypeGlobalPass, scene_epsilon );
 						rtTrace( top_object, refr_ray, refract_prd );
 					}
+					break;
 				}
-				break;
 			}
 
 			if (fmaxf( temp_Ks ) > 0.0f) 

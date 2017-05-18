@@ -1,12 +1,13 @@
-f = open('cornellbox/cornellbox.obj')
-out = open('cornellbox/cornellbox_unit.obj', 'w')
+f = open('clocks/clocks.obj')
+out = open('clocks/clocks-unit.obj', 'w')
 
-scale = 0.985222
-tranlate = [-0.010000,0.995000,-0.025000]
+
+scale = 0.999782
+
+
+tranlate = [0,0,0]
 
 lines = f.readlines()
-
-
 
 total = 0
 for line in lines:

@@ -773,6 +773,9 @@ void GLUTDisplay::display()
 		{nvtx::ScopedRange r( "trace" );
 		m_scene->trace( camera_data );
 		}
+		else {
+			quit();
+		}
 
 		// Always count rendered frames
 		++m_frame_count;
