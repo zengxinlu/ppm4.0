@@ -12,7 +12,7 @@ light_data:
   v2: 0.01
   radius: 0.03490658504
   power: [1.0, 1.0, 1.0]
-default_radius: 0.000001
-blend_mothod: [0.0, 5.0]
+default_radius: 0.0001
+blend_mothod: [1.0, 1.0]
 filename: "scenes/torus/torus_maya.obj"
 

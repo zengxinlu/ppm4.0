@@ -428,7 +428,7 @@ RT_PROGRAM void rtpass_exception()
 	HitRecord& rec = rtpass_output_buffer[launch_index];
 
 	//rec.flags = PPM_OVERFLOW;
-	rec.attenuated_Kd = rtpass_bad_color;
-	//rec.attenuated_Kd = make_float3(0.0);
+	//rec.attenuated_Kd = rtpass_bad_color;
+	rec.attenuated_Kd = make_float3(0.0);
 }
 

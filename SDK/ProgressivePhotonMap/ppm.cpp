@@ -1804,7 +1804,7 @@ void ProgressivePhotonScene::regenerate_area(RTsize buffer_width, RTsize buffer_
 }
 
 
-void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
+void ProgressivePhotonScene::trace(const RayGenCameraData& camera_data)
 {
 	double tstart, tend;
 	tstart = sutil::currentTime();
@@ -1812,9 +1812,9 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 	double t0, t1;
 	Buffer output_buffer = m_context["rtpass_output_buffer"]->getBuffer();
 	RTsize buffer_width, buffer_height;
-	output_buffer->getSize( buffer_width, buffer_height );
+	output_buffer->getSize(buffer_width, buffer_height);
 
-	if ((m_frame_number % 100 == 0 || m_frame_number <= 100) && m_frame_number > 0)
+	if ((m_frame_number <= 1000 || m_frame_number % 100 == 0) && m_frame_number > 0)
 		m_print_image = 1;
 
 	/// Print Images
@@ -2204,7 +2204,7 @@ int main( int argc, char** argv )
 		if (display_debug_buffer) scene.displayDebugBuffer();
 		scene.selectScene(model, modelNum);
 
-		//scene.useKnnInitRadius = true;
+		scene.useKnnInitRadius = true;
 		//scene.useCollectionPhotons = true;
 		//scene.m_collect_photon = true;
 		//scene.collectPhotonsFrame = 10100;

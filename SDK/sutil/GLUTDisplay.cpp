@@ -871,7 +871,8 @@ void GLUTDisplay::display()
 	{
 		double current_time;
 		current_time = sutil::currentTime();
-		printf("Total Time: %.6lf\n", current_time - m_start_time);
+		if (m_frame_count % 100 == 0) 
+			printf("Frame Count: %d, Total Time: %.6lf\n", m_frame_count, current_time - m_start_time);
 	}
 
 	{
