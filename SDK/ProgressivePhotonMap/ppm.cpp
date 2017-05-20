@@ -393,14 +393,14 @@ const unsigned int ProgressivePhotonScene::HEIGHT = 600u;
 /// const unsigned int ProgressivePhotonScene::WIDTH  = 256u;
 /// const unsigned int ProgressivePhotonScene::HEIGHT = 256u;
 
-const unsigned int ProgressivePhotonScene::MAX_PHOTON_COUNT = 2u;
+const unsigned int ProgressivePhotonScene::MAX_PHOTON_COUNT = 20u;
 const unsigned int ProgressivePhotonScene::MAX_PHOTON_DEPTH = 8u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 256u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 256u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 1024u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 1024u;
-const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 512u;
-const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 512u;
+const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 256u;
+const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 256u;
 const unsigned int ProgressivePhotonScene::NUM_PHOTONS = (ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH *
 	ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT *
 	ProgressivePhotonScene::MAX_PHOTON_COUNT);
@@ -1777,7 +1777,7 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 	RTsize buffer_width, buffer_height;
 	output_buffer->getSize( buffer_width, buffer_height );
 
-	if ((m_frame_number % 100 == 0 || m_frame_number <= 100) && m_frame_number > 0)
+	if ((m_frame_number % 100 == 0 || m_frame_number <= 1000) && m_frame_number > 0)
 		m_print_image = 1;
 
 	/// Print Images
@@ -1802,21 +1802,24 @@ void ProgressivePhotonScene::trace( const RayGenCameraData& camera_data )
 		m_context["rtpass_V"]->setFloat( camera_data.V );
 		m_context["rtpass_W"]->setFloat( camera_data.W );
 
-		std::cerr << "\n\nthe camera eye: " << camera_data.eye.x << ","
+		/*std::cerr << "\n\nthe camera eye: " << camera_data.eye.x << ","
 			<< camera_data.eye.y << ","
 			<< camera_data.eye.z << std::endl;
 		float3 c_look_at = camera_data.eye + camera_data.W * 100.f;
 		std::cerr << "the camera lookat: " << c_look_at.x << ","
 			<< c_look_at.y << ","
-			<< c_look_at.z << std::endl;
+			<< c_look_at.z << std::endl;*/
 	}
 
 	/// Trace viewing rays
 	if (m_print_timings) std::cerr << "Starting RT pass ... ";
 //	std::cerr.flush();
 	t0 = sutil::currentTime();
-
-	m_context->launch( EnterPointRayTrace, buffer_width, buffer_height );
+	//if (m_frame_number == 0) 
+	{
+		//printf("one time\n");
+		m_context->launch(EnterPointRayTrace, buffer_width, buffer_height);
+	}
 	t1 = sutil::currentTime();
 	if (m_print_timings) std::cerr << "finished. " << t1 - t0 << std::endl;
 
@@ -2183,7 +2186,7 @@ int main( int argc, char** argv )
 		if (display_debug_buffer) scene.displayDebugBuffer();
 		scene.selectScene(model, modelNum);
 
-		//scene.useKnnInitRadius = true;
+		scene.useKnnInitRadius = true;
 		//scene.useCollectionPhotons = true;
 		//scene.m_collect_photon = true;
 		//scene.collectPhotonsFrame = 1010;

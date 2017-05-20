@@ -95,7 +95,7 @@ bool           GLUTDisplay::m_use_sRGB             = false;
 bool           GLUTDisplay::m_initialized          = false;
 bool           GLUTDisplay::m_benchmark_no_display = false;
 unsigned int   GLUTDisplay::m_warmup_frames        = 50u;//50u;
-unsigned int   GLUTDisplay::m_timed_frames         = 1000u;//30u;
+unsigned int   GLUTDisplay::m_timed_frames         = 1010u;//30u;
 double         GLUTDisplay::m_warmup_start         = 0;
 double         GLUTDisplay::m_warmup_time          = 10.0;
 double         GLUTDisplay::m_benchmark_time       = 10.0;
@@ -871,6 +871,7 @@ void GLUTDisplay::display()
 	{
 		double current_time;
 		current_time = sutil::currentTime();
+		if (m_frame_count % 100 == 0)
 		printf("Frame Count: %d, Total Time: %.6lf\n", m_frame_count, current_time - m_start_time);
 	}
 

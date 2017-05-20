@@ -57,7 +57,7 @@ rtDeclareVariable(uint2, launch_index, rtLaunchIndex, );
 rtDeclareVariable(ShadowPRD, shadow_prd, rtPayload, );
 
 #define MAX_DEPTH 20 // one MILLION photons
-#define MAX_KNN 100
+#define MAX_KNN 1010
 
 static __device__ inline float sqr(float a) { return a * a; }
 
@@ -74,7 +74,7 @@ RT_PROGRAM void initRadius()
 	double farestDis = 0;
 	int farestId = 0;
 	int currCollection = 0;
-	int collectionNum = 50;
+	int collectionNum = 100;
 
 #define push_node(N) stack[stack_current++] = (N)
 #define pop_node()   stack[--stack_current]

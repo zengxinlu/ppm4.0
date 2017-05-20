@@ -311,6 +311,7 @@ RT_PROGRAM void globalDensity()
 	//float3 indirect_flux = 1.0f / repair_Area * flux_M / total_emitted * (frame_number + 1);
 	
 	float3 direct_flux = direct_buffer[launch_index]/(frame_number + 1.0f);
+	//float3 direct_flux = direct_buffer[launch_index];
 	rtpass_output_buffer[launch_index] = rec;
 	float3 final_color = direct_flux * direct_ratio + indirect_flux * indirect_ratio;
 		
