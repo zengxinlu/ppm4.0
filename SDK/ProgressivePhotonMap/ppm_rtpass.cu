@@ -320,7 +320,7 @@ RT_PROGRAM void rtpass_closest_hit()
 		HitPRD refract_prd = hit_prd;
 		refract_prd.ray_depth ++;
 
-		float refraction_facter = 1.5;
+		float refraction_facter = 2.417;
 		float critical_sina = 1/refraction_facter;
 		float critical_radian = asinf(critical_sina);
 

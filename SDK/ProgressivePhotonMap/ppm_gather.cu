@@ -278,71 +278,80 @@ RT_PROGRAM void globalDensity()
 		loop_iter++;
 	} while ( node );
 
-float3 new_flux = rec_flux + flux_M;
+	float3 indirect_flux;
+	if (frame_number > 0) {
+		float3 new_flux = rec_flux + flux_M;
 
-	int v[5];
-	int tot[5];
-	bool enough[5];
-	bool chip2[5];
-	double new_radius2 = rec_radius2;
-	double d_theta = 10;
-	for (int i = 0; i < 5; ++i)
-	{
-		if (i == 0) tot[i] = 0; else tot[i] = tot[i - 1];
-		for (int j = 0; j < 8; ++j)
-			tot[i] += statistics[i * 8 + j];
-		enough[i] = tot[i] > d_theta * 8 * (i + 1);
-		v[i] = 0;
-		if (tot[i] > 0) {
-			double npi = (double)tot[i] / ((i + 1) * 8);
-			for (int j = 0; j <= i; ++j)
-				for (int k = 0; k < 8; ++k)
-					v[i] += (statistics[j * 8 + k] - npi) * (statistics[j * 8 + k] - npi);
-			v[i] /= npi;
-			chip2[i] = v[i] <= chip2_9995[(i + 1) * 8 - 1];
-		} else chip2[i] = false;
-	}
-	if (enough[4] && !chip2[4])
-	{
-		for (int i = 0; i <= 3; ++i)
-			if (chip2[i])
-			{
-				new_radius2 = rec_radius2 * ((i + 1.0) / 5.0);
-				break;
-			}
-		if (new_radius2 == rec_radius2) {
-			double standard = v[4] / chip2_99[(4 + 1) * 8 - 1];
-			for (int i = 3; i >= 0; --i) 
-				if (v[i] / chip2_99[(i + 1) * 8 - 1] < standard) {
-					standard = v[i] / chip2_99[(i + 1) * 8 - 1];
-					new_radius2 = rec_radius2 * ((i + 1.0) / 5.0);
-				}
-		}
-		if (new_radius2 == rec_radius2)
+		int v[5];
+		int tot[5];
+		bool enough[5];
+		bool chip2[5];
+		double new_radius2 = rec_radius2;
+		double d_theta = 10;
+		for (int i = 0; i < 5; ++i)
 		{
-			for (int i = 0; i <= 3; ++i) 
-				if (enough[i]) {
-					new_radius2 = new_radius2 * ((i + 1.0) / 5.0);
+			if (i == 0) tot[i] = 0; else tot[i] = tot[i - 1];
+			for (int j = 0; j < 8; ++j)
+				tot[i] += statistics[i * 8 + j];
+			enough[i] = tot[i] > d_theta * 8 * (i + 1);
+			v[i] = 0;
+			if (tot[i] > 0) {
+				double npi = (double)tot[i] / ((i + 1) * 8);
+				for (int j = 0; j <= i; ++j)
+					for (int k = 0; k < 8; ++k)
+						v[i] += (statistics[j * 8 + k] - npi) * (statistics[j * 8 + k] - npi);
+				v[i] /= npi;
+				chip2[i] = v[i] <= chip2_9995[(i + 1) * 8 - 1];
+			} else chip2[i] = false;
+		}
+		if (enough[4] && !chip2[4])
+		{
+			for (int i = 0; i <= 3; ++i)
+				if (chip2[i])
+				{
+					new_radius2 = rec_radius2 * ((i + 1.0) / 5.0);
 					break;
 				}
+			if (new_radius2 == rec_radius2) {
+				double standard = v[4] / chip2_99[(4 + 1) * 8 - 1];
+				for (int i = 3; i >= 0; --i) 
+					if (v[i] / chip2_99[(i + 1) * 8 - 1] < standard) {
+						standard = v[i] / chip2_99[(i + 1) * 8 - 1];
+						new_radius2 = rec_radius2 * ((i + 1.0) / 5.0);
+					}
+			}
+			if (new_radius2 == rec_radius2)
+			{
+				for (int i = 0; i <= 3; ++i) 
+					if (enough[i]) {
+						new_radius2 = new_radius2 * ((i + 1.0) / 5.0);
+						break;
+					}
+			}
 		}
-	}
 	 
-	if (new_radius2 == rec_radius2) {
-		camera_buffer[launch_index].z = 0;
+		if (new_radius2 == rec_radius2) {
+			camera_buffer[launch_index].z = 0;
+		} else {
+			camera_buffer[launch_index].z = 0;
+			for (int j = 0; j < 40; ++j)
+				statistics[j] = 0;
+		}
+
+		float new_Area = M_PI * new_radius2;
+		new_flux = new_flux * (new_radius2 / rec_radius2);
+
+		rec.c.z = new_radius2;
+		rec.d = make_float4( new_flux );
+
+		indirect_flux = new_flux / total_emitted / new_Area;
 	} else {
-		camera_buffer[launch_index].z = 0;
-		for (int j = 0; j < 40; ++j)
-			statistics[j] = 0;
+		float M = static_cast<float>( num_new_photons ) ;
+		rec.c.w = M;
+		rec.c.z = rec_radius2;
+		rec.d = make_float4( flux_M );
+		indirect_flux = 1.0f / real_area * flux_M / total_emitted;
 	}
-
-	float new_Area = M_PI * new_radius2;
-	new_flux = new_flux * (new_radius2 / rec_radius2);
-
-	rec.c.z = new_radius2;
-	rec.d = make_float4( new_flux );
-
-	float3 indirect_flux = new_flux / total_emitted / new_Area;
 	float3 direct_flux = direct_buffer[launch_index] / (frame_number + 1.0f);
 	rtpass_output_buffer[launch_index] = rec;
 
