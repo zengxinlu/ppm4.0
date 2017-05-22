@@ -645,6 +645,10 @@ void ProgressivePhotonScene::loadScene(InitialCameraData& camera_data) {
 	vector<float> blend_mothod = modelConfig["blend_mothod"].as<vector<float> >();
 	m_context["direct_ratio"]->setFloat(blend_mothod[0]);
 	m_context["indirect_ratio"]->setFloat(blend_mothod[1]);
+
+	float refraction_facter = modelConfig["refraction_facter"].as<double>();
+	m_context["refractionFacter"]->setFloat(refraction_facter);
+
 	optix::Aabb aabb;	
 	loadObjGeometry(modelConfig["filename"].as<std::string>(), aabb, true);
 
@@ -1838,6 +1842,10 @@ void ProgressivePhotonScene::trace(const RayGenCameraData& camera_data)
 		m_context["rtpass_U"]->setFloat( camera_data.U );
 		m_context["rtpass_V"]->setFloat( camera_data.V );
 		m_context["rtpass_W"]->setFloat( camera_data.W );
+
+		std::cerr << "\n\nthe camera eye: " << camera_data.eye.x << ","
+			<< camera_data.eye.y << ","
+			<< camera_data.eye.z << std::endl;
 	}
 
 	/// Trace viewing rays

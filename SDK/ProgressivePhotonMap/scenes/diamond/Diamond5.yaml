@@ -1,5 +1,5 @@
 camera_data:
-  eye: [2.0, 1.0, 2.0]
+  eye: [0.441963,0.415519,2.43209]
   lookat: [0.0, 0.0, 0.0]
   up: [0.0, 1.0, 0.0]
   vfov: 35.0
@@ -7,11 +7,16 @@ light_data:
   is_area_light: 1
   target: [0.0, 0.0, 0.0]
   direction: null
-  position:  [0.1553, -0.6083, 0.03615]
+  position: [0.1553, -0.6083, 0.03615]
   v1: 0.01
   v2: 0.01
   radius: 0.03490658504 
   power: [1.0, 0.0, 0.0]
 default_radius: 0.001
-blend_mothod: [0.0, 1.0]
+blend_mothod: [0.0, 2.0]
+refraction_facter: 2.317
 filename: "scenes/Diamond/Diamond.obj"
+
+
+  # position:  [0.1553, -0.6083, 0.03615]
+  # position:  [0.1553, -0.5083, 0.06615]

@@ -15,3 +15,4 @@ light_data:
 default_radius: 0.00001
 blend_mothod: [0.0, 1.0]
 filename: "scenes/clocks/clocks.obj"
+refraction_facter: 1.5

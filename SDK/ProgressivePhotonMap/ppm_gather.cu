@@ -287,7 +287,7 @@ RT_PROGRAM void globalDensity()
 		bool enough[5];
 		bool chip2[5];
 		double new_radius2 = rec_radius2;
-		double d_theta = 10;
+		double d_theta = 30;
 		for (int i = 0; i < 5; ++i)
 		{
 			if (i == 0) tot[i] = 0; else tot[i] = tot[i - 1];

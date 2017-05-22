@@ -137,7 +137,7 @@ RT_PROGRAM void initRadius()
 		loop_iter++;
 	} while ( node );
 
-	rec.c.z = farestDis * 25;
+	rec.c.z = farestDis;
 	rtpass_output_buffer[launch_index] = rec;
 }
 
