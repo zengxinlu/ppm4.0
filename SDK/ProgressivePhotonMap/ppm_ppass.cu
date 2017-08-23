@@ -41,6 +41,7 @@ rtBuffer<uint2, 2>               Globalphoton_rnd_seeds;
 rtDeclareVariable(uint,          max_depth, , );
 rtDeclareVariable(uint,          max_photon_count, , );
 rtDeclareVariable(PPMLight,      light , , );
+rtDeclareVariable(float,		refractionFacter , , );
 
 rtDeclareVariable(uint2, launch_index, rtLaunchIndex, );
 
@@ -241,7 +242,7 @@ RT_PROGRAM void global_ppass_closest_hit()
 				refract_prd.ray_depth ++;
 				if ( refract_prd.ray_depth >= max_depth) break;
 
-				float refraction_facter = 1.5;
+				float refraction_facter = refractionFacter;
 				float critical_sina = 1/refraction_facter;
 				float critical_radian = asinf(critical_sina);
 
@@ -376,7 +377,7 @@ RT_PROGRAM void caustics_ppass_closest_hit() {
 		{	// if it is fraction 折射
 			if (Alpha < 1)
 			{
-				float refraction_facter = 1.5;
+				float refraction_facter = 2.1;
 				float critical_sina = 1/refraction_facter;
 				float critical_radian = asinf(critical_sina);
 

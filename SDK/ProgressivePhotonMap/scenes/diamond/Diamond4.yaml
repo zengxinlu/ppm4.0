@@ -7,11 +7,11 @@ light_data:
   is_area_light: 1
   target: [0.0, 0.0, 0.0]
   direction: null
-  position:  [0.4553, -0.6083, 0.23615]
+  position:  [0.1553, -0.6083, 0.03615]
   v1: 0.01
   v2: 0.01
   radius: 0.03490658504 
-  power: [1.0, 1.0, 1.0]
+  power: [0.0, 0.0, 1.0]
 default_radius: 0.001
 blend_mothod: [0.0, 1.0]
 filename: "scenes/Diamond/Diamond.obj"

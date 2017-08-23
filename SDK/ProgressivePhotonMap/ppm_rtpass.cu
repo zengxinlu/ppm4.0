@@ -52,6 +52,7 @@ rtBuffer<float3, 2>              sp_normal_buffer;
 rtBuffer<float, 2>               sp_radius_buffer;
 
 
+rtDeclareVariable(float,         refractionFacter, , );
 rtDeclareVariable(float,         rtpass_default_radius2, , );
 rtDeclareVariable(float3,        rtpass_eye, , );
 rtDeclareVariable(float3,        rtpass_U, , );
@@ -363,7 +364,7 @@ RT_PROGRAM void rtpass_closest_hit()
 		HitPRD refract_prd = hit_prd;
 		refract_prd.ray_depth ++;
 
-		float refraction_facter = 1.5;
+		float refraction_facter = refractionFacter;
 		float critical_sina = 1/refraction_facter;
 		float critical_radian = asinf(critical_sina);
 
