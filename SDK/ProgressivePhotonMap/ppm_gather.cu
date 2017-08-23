@@ -93,6 +93,15 @@ static __device__ __inline__
 	}
 }
 
+static __device__ __inline__ 
+	float getAngle( const float2& center, const float2& photon)
+{
+	const float2& pos = photon - center;
+	double al = atan2(pos.y, pos.x);
+	if (pos.y < 0) al += 2 * M_PI;
+	return (int)(4 * al / M_PI) % 8;
+}
+
 #if 0
 #define check( condition, color ) \
 { \
@@ -115,6 +124,8 @@ static __device__ const double chip2_95[] = {100, 3.84146, 5.99146, 7.81473, 9.4
 static __device__ const double chip2_99[] = {100, 6.63490, 9.21034, 11.34487, 13.27670, 15.08627, 16.81189, 18.47531, 20.09024, 21.66599, 23.20925, 24.72497, 26.21697, 27.68825, 29.14124, 30.57791, 31.99993, 33.40866, 34.80531, 36.19087, 37.56623, 38.93217, 40.28936, 41.63840, 42.97982, 44.31410, 45.64168, 46.96294, 48.27824, 49.58788, 50.89218, 52.19139, 53.48577, 54.77554, 56.06091, 57.34207, 58.61921, 59.89250, 61.16209, 62.42812, 63.69074, 64.95007, 66.20624, 67.45935, 68.70951, 69.95683, 71.20140, 72.44331, 73.68264, 74.91947};
 static __device__ const double chip2_995[] = {100, 7.87944, 10.59663, 12.83816, 14.86026, 16.74960, 18.54758, 20.27774, 21.95495, 23.58935, 25.18818, 26.75685, 28.29952, 29.81947, 31.31935, 32.80132, 34.26719, 35.71847, 37.15645, 38.58226, 39.99685, 41.40106, 42.79565, 44.18128, 45.55851, 46.92789, 48.28988, 49.64492, 50.99338, 52.33562, 53.67196, 55.00270, 56.32811, 57.64845, 58.96393, 60.27477, 61.58118, 62.88334, 64.18141, 65.47557, 66.76596, 68.05273, 69.33600, 70.61590, 71.89255, 73.16606, 74.43654, 75.70407, 76.96877, 78.23071};
 static __device__ const double chip2_9995[] = {100, 12.11567, 15.20180, 17.73000, 19.99735, 22.10533, 24.10280, 26.01777, 27.86805, 29.66581, 31.41981, 33.13661, 34.82127, 36.47779, 38.10940, 39.71876, 41.30807, 42.87921, 44.43377, 45.97312, 47.49845, 49.01081, 50.51112, 52.00019, 53.47875, 54.94746, 56.40689, 57.85759, 59.30003, 60.73465, 62.16185, 63.58201, 64.99546, 66.40251, 67.80346, 69.19856, 70.58807, 71.97222, 73.35123, 74.72529, 76.09460, 77.45934, 78.81966, 80.17573, 81.52769, 82.87569, 84.21985, 85.56030, 86.89715, 88.23052};
+
+rtBuffer<float, 3>               map_v;
 
 RT_PROGRAM void globalDensity()
 {
@@ -180,6 +191,9 @@ RT_PROGRAM void globalDensity()
 	uint loop_iter = 0;
 
 	uint *statistics = &rec.p0.x;
+	const float2 &center_pos = make_float2(rec.f.x, rec.f.y);
+	int now = 0;
+
 	do {
 
 		check( node < Global_Photon_Map_size, make_float3( 1,0,0 ) );
@@ -238,7 +252,26 @@ RT_PROGRAM void globalDensity()
 						}
 						accumulatePhoton(photon, rec_normal, temp_rec_Kd, num_new_photons, flux_M, L_K, L_K_M);
 						int i = min(static_cast<int>(distance2 * 5 / rec_radius2), 4);
-						int j = (static_cast<int>(photon.d.y / M_PI_4) + 8) % 8;
+						const float2 &photon_pos = make_float2(photon.f.x, photon.f.y);
+						int j = getAngle(center_pos, photon_pos);
+						/*if (photon.f.z == rec.f.z && now < 30) {
+							uint3 now_pos_tmp = make_uint3(launch_index.x, launch_index.y, now + 10);
+							++now;
+							map_v[now_pos_tmp] = center_pos.x;
+							now_pos_tmp = make_uint3(launch_index.x, launch_index.y, now + 10);
+							++now;
+							map_v[now_pos_tmp] = center_pos.y;
+							now_pos_tmp = make_uint3(launch_index.x, launch_index.y, now + 10);
+							++now;
+							map_v[now_pos_tmp] = photon_pos.x;
+							now_pos_tmp = make_uint3(launch_index.x, launch_index.y, now + 10);
+							++now;
+							map_v[now_pos_tmp] = photon_pos.y;
+							now_pos_tmp = make_uint3(launch_index.x, launch_index.y, now + 10);
+							++now;
+							map_v[now_pos_tmp] = getAngle(center_pos, photon_pos);
+						}
+						j = 0;*/
 						++statistics[i * 8 + j];
 					}
 
@@ -280,12 +313,13 @@ RT_PROGRAM void globalDensity()
 
 float3 new_flux = rec_flux + flux_M;
 
-	int v[5];
+	double v[5];
 	int tot[5];
 	bool enough[5];
 	bool chip2[5];
 	double new_radius2 = rec_radius2;
 	double d_theta = 10;
+
 	for (int i = 0; i < 5; ++i)
 	{
 		if (i == 0) tot[i] = 0; else tot[i] = tot[i - 1];
@@ -294,13 +328,28 @@ float3 new_flux = rec_flux + flux_M;
 		enough[i] = tot[i] > d_theta * 8 * (i + 1);
 		v[i] = 0;
 		if (tot[i] > 0) {
+			int max = 0;
 			double npi = (double)tot[i] / ((i + 1) * 8);
-			for (int j = 0; j <= i; ++j)
-				for (int k = 0; k < 8; ++k)
+			for (int j = 0; j <= i; ++j) 
+				for (int k = 0; k < 8; ++k) {
 					v[i] += (statistics[j * 8 + k] - npi) * (statistics[j * 8 + k] - npi);
+				}
 			v[i] /= npi;
 			chip2[i] = v[i] <= chip2_9995[(i + 1) * 8 - 1];
 		} else chip2[i] = false;
+	}
+	if (enough[4]) {
+		for (int i = 0; i < 5; ++i) {
+			uint3 now_pos = make_uint3(launch_index.x, launch_index.y, i);
+			uint3 now_pos_t = make_uint3(launch_index.x, launch_index.y, i + 5);
+			map_v[now_pos] = v[i];
+			map_v[now_pos_t] = tot[i];
+		}
+		for (int j = 0; j < 5; ++j) 
+			for (int k = 0; k < 8; ++k) {
+				uint3 now_pos_tmp = make_uint3(launch_index.x, launch_index.y, j * 8 + k + 10);
+				map_v[now_pos_tmp] = statistics[j * 8 + k];
+			}
 	}
 	if (enough[4] && !chip2[4])
 	{

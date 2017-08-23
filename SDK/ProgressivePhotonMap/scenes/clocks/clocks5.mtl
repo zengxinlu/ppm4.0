@@ -1,0 +1,90 @@
+newmtl clocks4:backplate
+d 1.0000
+Kd 0.77 0.77 0.77
+Ka 0.00 0.00 0.00
+Ks 0.00 0.00 0.00
+
+newmtl clocks4:body
+d 1.0000
+Kd 0.59 0.72 0.40
+Ka 0.00 0.00 0.00
+Ks 0.00 0.00 0.00
+
+newmtl clocks4:glass
+d 0.0000
+Ks 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Kd 0.00 0.00 0.00
+
+newmtl clocks4:handle
+d 1.0000
+Kd 0.32 0.05 0.04
+Ka 0.00 0.00 0.00
+Ks 0.00 0.00 0.00
+
+newmtl clocks4:mat1
+d 1.0000
+Kd 0.67 0.67 0.67
+Ka 0.00 0.00 0.00
+Ks 0.00 0.00 0.00
+
+newmtl clocks4:mat2
+d 1.0000
+Kd 0.13 0.13 0.13
+Ka 0.00 0.00 0.00
+Ks 0.00 0.00 0.00
+
+newmtl clocks4:mat3
+d 1.0000
+Kd 0.72 0.40 0.40
+Ka 0.00 0.00 0.00
+Ks 0.00 0.00 0.00
+
+newmtl clocks4:mat4
+d 1.0000
+Kd 0.40 0.50 0.72
+Ka 0.00 0.00 0.00
+Ks 0.00 0.00 0.00
+
+newmtl clocks4:metal
+d 1.0000
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Ks 1.00 1.00 1.00
+
+
+newmtl lambert2SG
+d 1.0000
+Kd 0.50 0.50 0.50
+Ka 0.00 0.00 0.00
+Ks 0.00 0.00 0.00
+
+newmtl lambert3SG
+d 1.0000
+Kd 0.50 0.50 0.50
+Ka 0.00 0.00 0.00
+Ks 0.00 0.00 0.00
+
+newmtl lambert4SG
+d 1.0000
+Kd 0.50 0.50 0.50
+Ka 0.00 0.00 0.00
+Ks 0.00 0.00 0.00
+
+newmtl phong2SG
+d 1.0000
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Ks 0.50 0.50 0.50
+
+newmtl phong3SG
+d 1.0000
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Ks 1.00 1.00 1.00
+
+newmtl phong4SG
+d 1.0000
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Ks 1.00 1.00 1.00

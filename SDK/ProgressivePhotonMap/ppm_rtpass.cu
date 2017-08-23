@@ -166,12 +166,44 @@ rtDeclareVariable(HitPRD, hit_prd, rtPayload, );
 rtDeclareVariable(optix::Ray, ray,          rtCurrentRay, );
 rtDeclareVariable(float,      t_hit,        rtIntersectionDistance, );
 
+rtBuffer<float3> vertex_buffer;     
 
 static __device__ __inline__ void aroundDirection(float3& d,  const float2& d_sample, float SIN_DEGREE)
 {
 	float3 U, V, W;
 	createONB( d, U, V, W);
 	d = normalize(W + (d_sample.x * U + d_sample.y * V) * SIN_DEGREE);
+}
+
+static __device__ __inline__ float myDot(float3 a, float3 b)
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+static __device__ __inline__ float3 myCross(float3 a, float3 b)
+{
+	return make_float3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+}
+
+static __device__ __inline__ float3 myNormalise(float3 a)
+{
+	float len = sqrt(myDot(a, a));
+	a.x /= len;
+	a.y /= len;
+	a.z /= len;
+	return a;
+}
+
+static __device__ __inline__ float2 trans(float3& p0, float3& p1, float3& p2, float3& hp)
+{
+	float3 x_ = p1 - p0;
+	x_ = myNormalise(x_);
+	float3 y_ = p2 - p0;
+	y_ = myNormalise(myCross(x_, myCross(x_, y_)));
+
+	float3 tmp = hp - p0;
+	float2 tmp2 = make_float2(myDot(x_, tmp), myDot(y_, tmp));
+	return tmp2;
 }
 
 RT_PROGRAM void rtpass_closest_hit()
@@ -215,6 +247,17 @@ RT_PROGRAM void rtpass_closest_hit()
 		{
 			rec.position = hit_point; 
 			rec.normal = ffnormal;
+			
+			float3 p0 = vertex_buffer[ triangle_info.x ];
+			float3 p1 = vertex_buffer[ triangle_info.y ];
+			float3 p2 = vertex_buffer[ triangle_info.z ];
+
+			rec.tindex.x = triangle_info.w;
+
+			rec.frag_position = trans(p0, p1, p2, hit_point);
+			rec.t0 = make_float4(p0, 0.0);
+			rec.t1 = make_float4(p1, 0.0);
+			rec.t2 = make_float4(p2, 0.0);
 
 			if( !use_grid ) 
 			{

@@ -335,6 +335,7 @@ void PpmObjLoader::createGeometryInstances( GLMmodel* model,
 			mesh->setPrimitiveCount( num_triangles );
 			mesh->setIntersectionProgram( mesh_intersect);
 			mesh->setBoundingBoxProgram( mesh_bbox );
+			m_context["vertex_buffer"]->setBuffer(m_vbuffer);
 			mesh[ "vertex_buffer" ]->setBuffer( m_vbuffer );
 			mesh[ "normal_buffer" ]->setBuffer( m_nbuffer );
 			mesh[ "texcoord_buffer" ]->setBuffer( m_tbuffer );

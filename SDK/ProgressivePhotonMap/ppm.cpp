@@ -201,6 +201,7 @@ class ProgressivePhotonScene : public SampleScene
 public:
 	std::string m_model_file;
 	std::string m_model;
+	std::string m_model_num;
 	ProgressivePhotonScene() : SampleScene()
 		, m_frame_number( 0 )
 		, m_display_debug_buffer( false )
@@ -225,6 +226,7 @@ public:
 		if (model == "diamond")			setTestScene(ProgressivePhotonScene::Diamond_Scene);
 		m_model = model;
 		m_model_file = std::string(sutil::samplesDir()) + "/progressivePhotonMap/scenes/" + model + "/" + model + modelNum + ".yaml";
+		m_model_num = modelNum;
 	}	
 
 	/// From SampleScene
@@ -394,7 +396,7 @@ const unsigned int ProgressivePhotonScene::HEIGHT = 600u;
 /// const unsigned int ProgressivePhotonScene::WIDTH  = 256u;
 /// const unsigned int ProgressivePhotonScene::HEIGHT = 256u;
 
-const unsigned int ProgressivePhotonScene::MAX_PHOTON_COUNT = 20u;
+const unsigned int ProgressivePhotonScene::MAX_PHOTON_COUNT = 4u;
 const unsigned int ProgressivePhotonScene::MAX_PHOTON_DEPTH = 8u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_WIDTH = 256u;
 //const unsigned int ProgressivePhotonScene::PHOTON_LAUNCH_HEIGHT = 256u;
@@ -646,7 +648,17 @@ void ProgressivePhotonScene::loadScene(InitialCameraData& camera_data) {
 	m_context["direct_ratio"]->setFloat(blend_mothod[0]);
 	m_context["indirect_ratio"]->setFloat(blend_mothod[1]);
 	optix::Aabb aabb;	
-	loadObjGeometry(modelConfig["filename"].as<std::string>(), aabb, true);
+	loadObjGeometry(modelConfig["filename"].as<std::string>(), aabb, false);
+
+	Buffer map_v = m_context->createBuffer(RT_BUFFER_INPUT_OUTPUT);
+	map_v->setFormat(RT_FORMAT_FLOAT);
+	map_v->setSize(WIDTH, HEIGHT, 50);
+
+	float* rnd_seeds = reinterpret_cast<float*>(map_v->map());
+	for (unsigned int i = 0; i < WIDTH * HEIGHT * 50; ++i)
+		rnd_seeds[i] = 1e10;
+	map_v->unmap();
+	m_context["map_v"]->set(map_v);
 
 }
 void ProgressivePhotonScene::initGlobal() {
@@ -1060,25 +1072,56 @@ inline float getAngle(float2 pos)
 }
 void ProgressivePhotonScene::setPhotonPosition2D(PhotonRecord** photon_ptrs, int photons_count)
 {
-	for (int i = 0;i < photons_count;i ++)
+	return;
+	for (int i = 0; i < photons_count; i++)
+
 	{
+
 		int triangleIndex = photon_ptrs[i]->triangleIndex;
- 		PointFloat3 trianglePoints[3];
+
+		PointFloat3 trianglePoints[3];
+
 		unsigned int *t_vindex = loader->model->triangles[triangleIndex].vindices;
+
 		float *apoint = &(loader->model->vertices[t_vindex[0] * 3]);
+
 		float *bpoint = &(loader->model->vertices[t_vindex[1] * 3]);
+
 		float *cpoint = &(loader->model->vertices[t_vindex[2] * 3]);
+
 		trianglePoints[0] = PointFloat3(apoint[0], apoint[1], apoint[2]);
+
 		trianglePoints[1] = PointFloat3(bpoint[0], bpoint[1], bpoint[2]);
+
 		trianglePoints[2] = PointFloat3(cpoint[0], cpoint[1], cpoint[2]);
 
+
+		for (int i = 0; i < 3; ++i) {
+			for (int j = 0; j < 3; ++j)
+				cout << trianglePoints[i].points[j] << " ";
+			cout << endl;
+		}
 		PointFloat3 x_ = trianglePoints[1] - trianglePoints[0];
+
 		x_.normalise();
-		
+
+		PointFloat3 y_ = x_.Cross(x_.Cross(trianglePoints[2] - trianglePoints[0]));
+		y_.normalise();
+
+
+
 		PointFloat3 tmp = PointFloat3(photon_ptrs[i]->position.x, photon_ptrs[i]->position.y, photon_ptrs[i]->position.z);
-		float2 tmp2 = make_float2(x_.Dot(tmp - trianglePoints[0]), x_.Cross(tmp - trianglePoints[0]).Length());
-		photon_ptrs[i]->angle = getAngle(tmp2);
+
+		PointFloat3 tmp2 = tmp - trianglePoints[0];
+
+		float2 tmp3 = make_float2(x_.Dot(tmp2), y_.Dot(tmp2));
+
+		photon_ptrs[i]->angle = getAngle(tmp3);
+		cout << photon_ptrs[i]->angle << endl;
+
 	}
+
+
 }
 
 void ProgressivePhotonScene::buildGlobalPhotonMap()
@@ -1119,6 +1162,7 @@ void ProgressivePhotonScene::buildGlobalPhotonMap()
 		for( unsigned int i = 0; i < NUM_PHOTONS; ++i ) {
 			if( fmaxf( photons_data[i].energy ) > 0.0f ) {
 				temp_photons[valid_photons++] = &photons_data[i];
+				//cout << photons_data[i].frag_position.x << " " << photons_data[i].frag_position.y << endl;
 			}
 		}
 		//if ( m_display_debug_buffer ) {
@@ -1817,12 +1861,20 @@ void ProgressivePhotonScene::trace(const RayGenCameraData& camera_data)
 	if ((m_frame_number <= 1000 || m_frame_number % 100 == 0) && m_frame_number > 0)
 		m_print_image = 1;
 
+	/*if (m_frame_number == 100) {
+		m_print_image = 1;
+	}*/
+	
+
 	/// Print Images
 	if (m_print_image)
 	{
 		char name1[256], name2[256];
 		sprintf(name1, "%s/%s/%s/grab", sutil::samplesDir(), "progressivePhotonMap", "screengrab");
 		sprintf(name2, "%s/%s/%s/%s", sutil::samplesDir(), "progressivePhotonMap", "screengrab", TestSceneNames[m_test_scene]);
+		/*int tmp;
+		sscanf(m_model_num.c_str(), "%d", &tmp);
+		grab(buffer_width, buffer_height, name1, name2, tmp);*/
 		grab(buffer_width, buffer_height, name1, name2, m_frame_number);
 		m_print_image = false;
 	}
@@ -1866,6 +1918,46 @@ void ProgressivePhotonScene::trace(const RayGenCameraData& camera_data)
 	t0 = sutil::currentTime();
 	
 	m_context->launch(EnterPointGlobalGather, buffer_width, buffer_height);
+
+	//FILE *fout = fopen("v.txt", "a");
+	//{
+	//	/*Buffer hit_records = m_context["rtpass_output_buffer"]->getBuffer();
+	//	HitRecord* hit_record_data = reinterpret_cast<HitRecord*>(hit_records->map());
+	//	for (unsigned int j = 0; j < buffer_height; ++j) {
+	//		for (unsigned int i = 0; i < buffer_width; ++i) {
+	//			if (hit_record_data[j*buffer_width + i].flags & PPM_HIT) {
+	//				cout << hit_record_data[j*buffer_width + i].t0.x << " " << hit_record_data[j*buffer_width + i].t0.y << " " << hit_record_data[j*buffer_width + i].t0.z << endl;
+	//				cout << hit_record_data[j*buffer_width + i].t1.x << " " << hit_record_data[j*buffer_width + i].t1.y << " " << hit_record_data[j*buffer_width + i].t1.z << endl;
+	//				cout << hit_record_data[j*buffer_width + i].t2.x << " " << hit_record_data[j*buffer_width + i].t2.y << " " << hit_record_data[j*buffer_width + i].t2.z << endl;
+	//				cout << hit_record_data[j*buffer_width + i].position.x << " " << hit_record_data[j*buffer_width + i].position.y << " " << hit_record_data[j*buffer_width + i].position.z << endl;
+	//				cout << hit_record_data[j*buffer_width + i].frag_position.x << " " << hit_record_data[j*buffer_width + i].frag_position.y << endl;
+	//				cout << i << " " << j << endl;
+	//			}
+	//		}
+	//	}
+	//	hit_records->unmap();*/
+
+	//	fprintf(fout, "%d\n", m_frame_number);
+	//	Buffer map_v = m_context["map_v"]->getBuffer();
+	//	float* vdata = reinterpret_cast<float*>(map_v->map());
+	//	for (unsigned int j = 0; j < buffer_height; ++j) {
+	//		for (unsigned int i = 0; i < buffer_width; ++i) {
+	//			if (vdata[4 * buffer_width * buffer_height + j * buffer_width + i] < 1e10) {
+	//				fprintf(fout, "%d %d %d\n", i, j, m_frame_number);
+	//				for (unsigned int k = 0; k < 5; ++k) {
+	//					fprintf(fout, "%d v = %.10lf ", k, vdata[k * buffer_width * buffer_height + j * buffer_width + i]);
+	//					fprintf(fout, "tot = %.1lf\n", vdata[(k + 5) * buffer_width * buffer_height + j * buffer_width + i]);
+	//				}
+	//				for (unsigned int k = 10; k < 50; ++k) {
+	//					fprintf(fout, "%.10lf ", vdata[k * buffer_width * buffer_height + j * buffer_width + i]);
+	//				}
+	//				fprintf(fout, "\n");
+	//			}
+	//		}
+	//	}
+	//	map_v->unmap();
+	//}
+	//fclose(fout);
 		
 	/*m_context->launch( EnterPointCausticsGather,
 		static_cast<unsigned int>(buffer_width),

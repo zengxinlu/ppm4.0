@@ -99,6 +99,9 @@ struct HitRecord
   optix::float3 flux;             //
   float         accum_atten;	  //
   optix::uint4	p0, p1, p2, p3, p4, p5, p6, p7, p8, p9;
+  optix::float2 frag_position;
+  optix::float2 tindex;
+  optix::float4 t0, t1, t2;
 };
 
 
@@ -109,6 +112,8 @@ struct PackedHitRecord
   optix::float4 c;   // atten_Kd.z, flags,      radius2,    photon_count
   optix::float4 d;   // flux.x,     flux.y,     flux.z,     accum_atten 
   optix::uint4	p0, p1, p2, p3, p4, p5, p6, p7, p8, p9;
+  optix::float4 f;	 // frag_position.x frag_position.y
+  optix::float4 t0, t1, t2;
 };
 
 
@@ -129,6 +134,8 @@ struct PhotonRecord
   float angle;
   float area;
   int triangleIndex;
+  optix::float2 frag_position;
+  optix::float2 tindex;
 };
 
 
@@ -138,6 +145,7 @@ struct PackedPhotonRecord
   optix::float4 b;   // normal.y,   normal.z,   ray_dir.x,  ray_dir.y
   optix::float4 c;   // ray_dir.z,  energy.x,   energy.y,   energy.z
   optix::float4 d;   // axis,       angle,    area,    triangleIndex
+  optix::float4 f;	 // frag_position.x frag_position.y unknown.x unknown.y
 };
 
 
